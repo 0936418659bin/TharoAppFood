@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.Theme.Tharo_app_food" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowTranslucentNavigation">true</item>
+    </style>
+
+    <style name="Theme.Tharo_app_food" parent="Base.Theme.Tharo_app_food">
+        <item name="android:windowTranslucentNavigation">true</item>
+    </style>
+
+</resources>
