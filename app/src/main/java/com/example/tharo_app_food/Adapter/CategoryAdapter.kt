@@ -13,9 +13,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.tharo_app_food.Activity.ListFoodActivity
-import com.example.tharo_app_food.Adapter.BestFoodAdapter.ViewHolder
 import com.example.tharo_app_food.Domain.Category
-import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.R
 import eightbitlab.com.blurview.BlurView
 import eightbitlab.com.blurview.RenderScriptBlur
@@ -68,7 +66,7 @@ class CategoryAdapter(val items: ArrayList<Category>) : RecyclerView.Adapter<Cat
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleTxt: TextView = itemView.findViewById(R.id.titleCatTxt)
         val pic: ImageView = itemView.findViewById(R.id.imgCate)
-        val blurView: BlurView = itemView.findViewById(R.id.blurView)
+        val blurView: BlurView = itemView.findViewById(R.id.blurView2)
     }
 
 }

@@ -54,7 +54,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <eightbitlab.com.blurview.BlurView
-                android:id="@+id/blurView"
+                android:id="@+id/blurView2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"

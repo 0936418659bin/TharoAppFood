@@ -9,7 +9,7 @@
     tools:context=".Activity.CartActivity">
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/emptyTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Your cart is empty"
@@ -39,7 +39,7 @@
                 android:layout_marginTop="16dp">
 
                 <ImageView
-                    android:id="@+id/imageView3"
+                    android:id="@+id/backBtn"
                     android:layout_width="58dp"
                     android:layout_height="58dp"
                     android:padding="12dp"
@@ -58,28 +58,29 @@
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="@+id/imageView3"
+                    app:layout_constraintStart_toStartOf="@+id/backBtn"
                     app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/cartView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-
 
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_marginTop="32dp"
                 android:orientation="horizontal">
 
                 <eightbitlab.com.blurview.BlurView
                     android:id="@+id/blurView"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:background="@drawable/blur_background"
-                    android:layout_marginEnd="8dp">
+                    android:background="@drawable/blur_background">
 
                     <EditText
                         android:id="@+id/editTextText"
@@ -87,23 +88,23 @@
                         android:layout_height="40dp"
                         android:background="#00ffffff"
                         android:ems="10"
-                        android:textSize="14sp"
-                        android:textAlignment="center"
                         android:hint="Enter Your Code"
                         android:inputType="text"
                         android:padding="8dp"
+                        android:textAlignment="center"
                         android:textColor="@color/white"
-                        android:textColorHint="@color/white" />
+                        android:textColorHint="@color/white"
+                        android:textSize="14sp" />
                 </eightbitlab.com.blurview.BlurView>
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/button"
                     style="@android:style/Widget.Button"
-                    android:background="@drawable/button_bg"
                     android:layout_width="145dp"
                     android:layout_height="40dp"
+                    android:background="@drawable/button_bg"
                     android:text="Apply Coupon"
-                    android:textColor="@color/white"/>
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <TextView
@@ -117,6 +118,7 @@
                 android:textStyle="bold" />
 
             <eightbitlab.com.blurview.BlurView
+                android:id="@+id/blurView2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -139,7 +141,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
-                        android:id="@+id/textView11"
+                        android:id="@+id/totalFeeTxt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0$"
@@ -160,7 +162,7 @@
                         app:layout_constraintTop_toBottomOf="@+id/textView9" />
 
                     <TextView
-                        android:id="@+id/textView14"
+                        android:id="@+id/delivery"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -168,10 +170,10 @@
                         android:textColor="@color/white"
                         android:textSize="16sp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/textView11" />
+                        app:layout_constraintTop_toBottomOf="@+id/totalFeeTxt" />
 
                     <TextView
-                        android:id="@+id/textView16"
+                        android:id="@+id/taxTxt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -179,7 +181,7 @@
                         android:textColor="@color/white"
                         android:textSize="16sp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/textView14" />
+                        app:layout_constraintTop_toBottomOf="@+id/delivery" />
 
                     <TextView
                         android:id="@+id/textView17"
@@ -205,7 +207,7 @@
                         app:layout_constraintTop_toBottomOf="@+id/view" />
 
                     <TextView
-                        android:id="@+id/textView19"
+                        android:id="@+id/totalTxt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="$0"
@@ -213,7 +215,7 @@
                         android:textSize="18sp"
                         android:textStyle="bold"
                         app:layout_constraintBottom_toBottomOf="@+id/textView18"
-                        app:layout_constraintEnd_toEndOf="@+id/textView16"
+                        app:layout_constraintEnd_toEndOf="@+id/taxTxt"
                         app:layout_constraintTop_toTopOf="@+id/textView18" />
 
                     <View

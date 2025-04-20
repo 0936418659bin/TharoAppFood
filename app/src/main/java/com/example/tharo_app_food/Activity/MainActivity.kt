@@ -112,6 +112,10 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
     private fun setVariable() {
+        binding.cartBtn.setOnClickListener {
+            val intent = Intent(this, CartActivity::class.java)
+            startActivity(intent)
+        }
         binding.searchBtn.setOnClickListener {
             val text = binding.searchEdt.text.toString()
             if (text.isNotEmpty()) {

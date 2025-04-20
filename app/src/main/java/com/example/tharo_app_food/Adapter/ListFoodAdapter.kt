@@ -12,10 +12,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.tharo_app_food.Activity.DetailActivity
-import com.example.tharo_app_food.Adapter.CategoryAdapter.ViewHolder
 import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.R
 import eightbitlab.com.blurview.BlurView
@@ -68,6 +66,6 @@ class ListFoodAdapter(private val context: Context, private val items: ArrayList
         val starTxt: TextView = itemView.findViewById(R.id.starTxt)
         val timeTxt: TextView = itemView.findViewById(R.id.timeTxt)
         val pic: ImageView = itemView.findViewById(R.id.img)
-        val blurView: BlurView = itemView.findViewById(R.id.blurView)
+        val blurView: BlurView = itemView.findViewById(R.id.blurView2)
     }
 }

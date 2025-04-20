@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eightbitlab.com.blurview.BlurView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/blurView2"
+    android:layout_width="match_parent"
+    android:layout_height="110dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="16dp"
+    android:background="@drawable/blur_background"
+    app:blurOverlayColor="#20000000">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/minusBtn2"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/oval_bg"
+            android:gravity="center"
+            android:text="-"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/pic"
+            app:layout_constraintEnd_toStartOf="@+id/numTxt2"
+            app:layout_constraintStart_toStartOf="@+id/totalEachItem"
+            app:layout_constraintTop_toBottomOf="@+id/totalEachItem"
+            tools:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/numTxt2"
+            android:layout_width="20dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/minusBtn2"
+            app:layout_constraintStart_toEndOf="@+id/minusBtn2"
+            app:layout_constraintTop_toTopOf="@+id/minusBtn2"
+            tools:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/plusBtn2"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/oval_bg"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/minusBtn2"
+            app:layout_constraintStart_toEndOf="@+id/numTxt2"
+            app:layout_constraintTop_toTopOf="@+id/minusBtn2"
+            tools:textColor="@color/black" />
+
+        <ImageView
+            android:id="@+id/pic"
+            android:layout_width="123dp"
+            android:layout_height="96dp"
+            android:layout_marginStart="8dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/img1" />
+
+        <TextView
+            android:id="@+id/titleTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Title"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@+id/pic"
+            app:layout_constraintTop_toTopOf="@+id/pic"
+            tools:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/totalEachItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="$0"
+            android:textColor="@color/white"
+            app:layout_constraintStart_toStartOf="@+id/titleTxt"
+            app:layout_constraintTop_toBottomOf="@+id/titleTxt"
+            tools:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/feeEachItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="$0"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/minusBtn2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/minusBtn2"
+            tools:textColor="@color/black" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</eightbitlab.com.blurview.BlurView>
