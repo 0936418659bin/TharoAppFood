@@ -89,10 +89,10 @@ class CartAdapter(
         val pic: ImageView = itemView.findViewById(R.id.pic)
         val feeEachItem: TextView = itemView.findViewById(R.id.feeEachItem)
         val totalEachItem: TextView = itemView.findViewById(R.id.totalEachItem)
-        val plusItem: TextView = itemView.findViewById(R.id.plusBtn)
-        val minusItem: TextView = itemView.findViewById(R.id.minusBtn)
-        val num: TextView = itemView.findViewById(R.id.numTxt)
-        val blurView: BlurView = itemView.findViewById(R.id.blurView2)
+        val plusItem: TextView = itemView.findViewById(R.id.plusBtn2)
+        val minusItem: TextView = itemView.findViewById(R.id.minusBtn2)
+        val num: TextView = itemView.findViewById(R.id.numTxt2)
+        val blurView: BlurView = itemView.findViewById(R.id.blurView)
     }
 
 }

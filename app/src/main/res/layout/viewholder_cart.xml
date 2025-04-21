@@ -2,7 +2,7 @@
 <eightbitlab.com.blurview.BlurView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/blurView2"
+    android:id="@+id/blurView"
     android:layout_width="match_parent"
     android:layout_height="110dp"
     android:layout_marginTop="4dp"

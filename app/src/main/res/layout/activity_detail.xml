@@ -38,6 +38,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="32dp"
                     android:padding="8dp"
+                    app:tint="@android:color/white"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:srcCompat="@drawable/back" />
@@ -54,7 +55,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <eightbitlab.com.blurview.BlurView
-                android:id="@+id/blurView2"
+                android:id="@+id/blurView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
@@ -239,12 +240,12 @@
     </ScrollView>
 
     <eightbitlab.com.blurview.BlurView
+        android:id="@+id/blurView2"
         android:layout_width="match_parent"
         android:layout_height="75dp"
-        android:id="@+id/blurView2"
+        app:blurOverlayColor="#20000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:blurOverlayColor="#20000000"
         app:layout_constraintStart_toStartOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -257,11 +258,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="8dp"
+                android:background="@drawable/button_bg"
                 android:drawableEnd="@drawable/basket"
-                android:text="Thêm giỏ hàng "
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:background="@drawable/button_bg"
+                android:text="Thêm giỏ hàng "
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 app:layout_constraintBottom_toBottomOf="parent"

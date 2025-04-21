@@ -4,9 +4,17 @@ import android.content.Context
 import android.widget.Toast
 import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.helper.TinyDB
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class ManagementCart(private val context: Context) {
     private val tinyDB: TinyDB = TinyDB(context)
+    private val firebaseDatabase = FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
+    private val cartRef = firebaseDatabase
+        .getReference("Cart")
+    private val auth = FirebaseAuth.getInstance()
+    private val currentUserId = auth.currentUser?.uid
+
 
     fun insertFood(item: Foods) {
         val listpop = getListCart()

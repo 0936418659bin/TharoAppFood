@@ -27,13 +27,15 @@ class CartActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCartBinding.inflate(layoutInflater)
-        setContentView(R.layout.activity_cart)
+        setContentView(binding.root)
 
         managmentCart = ManagementCart(this)
 
         setVariable()
         calculateCart()
         setBlurEffect()
+
+        initList()
     }
 
     fun setBlurEffect() {
@@ -66,7 +68,7 @@ class CartActivity : BaseActivity() {
 
         binding.cartView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
 
-        val adapter = CartAdapter(managmentCart.getListCart(), this, object :
+        adapter = CartAdapter(managmentCart.getListCart(), this, object :
             ChangeNumberItemsListener {
             override fun change() {
                 calculateCart()
