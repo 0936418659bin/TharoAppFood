@@ -19,87 +19,59 @@ import com.example.tharo_app_food.databinding.ActivityCartBinding
 import eightbitlab.com.blurview.RenderScriptBlur
 
 class CartActivity : BaseActivity() {
-
     private lateinit var binding: ActivityCartBinding
-    private lateinit var adapter: RecyclerView.Adapter<*>
-    private lateinit var managmentCart: ManagementCart
-    private var tax: Double = 0.0
+    private lateinit var adapter: CartAdapter
+    private lateinit var managementCart: ManagementCart
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCartBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        managmentCart = ManagementCart(this)
-
-        setVariable()
-        calculateCart()
-        setBlurEffect()
-
-        initList()
+        managementCart = ManagementCart(this)
+        setupViews()
+        loadCartData()
     }
 
-    fun setBlurEffect() {
-        val radius = 10f
-        val decorView: View = this.window.decorView
-        val rootView = decorView.findViewById<ViewGroup>(android.R.id.content)
-        val windowBackground: Drawable = decorView.background
+    private fun setupViews() {
+        binding.backBtn.setOnClickListener { finish() }
 
-        binding.blurView.setupWith(rootView, RenderScriptBlur(this))
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-        binding.blurView.outlineProvider = ViewOutlineProvider.BACKGROUND
-        binding.blurView.clipToOutline = true
-
-        binding.blurView2.setupWith(rootView, RenderScriptBlur(this))
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-        binding.blurView2.outlineProvider = ViewOutlineProvider.BACKGROUND
-        binding.blurView2.clipToOutline = true
-    }
-
-    private fun initList() {
-        if (managmentCart.getListCart().isEmpty()) {
-            binding.emptyTxt.visibility = View.VISIBLE
-            binding.scrollview.visibility = View.GONE
-        } else {
-            binding.emptyTxt.visibility = View.GONE
-            binding.scrollview.visibility = View.VISIBLE
-        }
-
-        binding.cartView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-
-        adapter = CartAdapter(managmentCart.getListCart(), this, object :
-            ChangeNumberItemsListener {
+        // Khởi tạo RecyclerView
+        binding.cartView.layoutManager = LinearLayoutManager(this)
+        adapter = CartAdapter(arrayListOf(), this, object : ChangeNumberItemsListener {
             override fun change() {
                 calculateCart()
             }
         })
-
         binding.cartView.adapter = adapter
     }
 
-
-    private fun setVariable(){
-        binding.backBtn.setOnClickListener{
-            finish()
+    private fun loadCartData() {
+        managementCart.getListCart { list ->
+            if (list.isEmpty()) {
+                binding.emptyTxt.visibility = View.VISIBLE
+                binding.scrollview.visibility = View.GONE
+            } else {
+                binding.emptyTxt.visibility = View.GONE
+                binding.scrollview.visibility = View.VISIBLE
+                adapter.updateList(list)
+                calculateCart()
+            }
         }
     }
 
     private fun calculateCart() {
-        val percentTax: Double = 0.02
-        val delivery: Double = 10.0
+        managementCart.getListCart { list ->
+            val percentTax = 0.02
+            val delivery = 10.0
+            val subtotal = list.sumOf { it.Price * it.numberInChart }
+            val tax = subtotal * percentTax
+            val total = subtotal + tax + delivery
 
-        tax = Math.round(managmentCart.getTotalFee() * percentTax * 100.0) / 100.0
-
-        val total: Double = Math.round(managmentCart.getTotalFee() + tax + delivery) / 100.0
-        val itemTotal: Double = Math.round(managmentCart.getTotalFee() *100) / 100.0
-
-        binding.totalFeeTxt.setText("$" + itemTotal)
-        binding.taxTxt.setText("$" + tax)
-        binding.delivery.setText("$" + delivery)
-        binding.totalTxt.setText("$" + total)
-
-
-
+            binding.totalFeeTxt.text = "$${"%.2f".format(subtotal)}"
+            binding.taxTxt.text = "$${"%.2f".format(tax)}"
+            binding.delivery.text = "$${"%.2f".format(delivery)}"
+            binding.totalTxt.text = "$${"%.2f".format(total)}"
+        }
     }
 }

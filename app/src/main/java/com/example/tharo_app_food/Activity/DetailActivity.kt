@@ -2,6 +2,8 @@ package com.example.tharo_app_food.Activity
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -14,91 +16,80 @@ import com.example.tharo_app_food.databinding.ActivityDetailBinding
 import eightbitlab.com.blurview.RenderScriptBlur
 
 class DetailActivity : BaseActivity() {
-
     private lateinit var binding: ActivityDetailBinding
-    private lateinit var objects: Foods
-    private var num: Int = 1
+    private lateinit var foodObject: Foods
+    private var quantity: Int = 1
     private lateinit var managementCart: ManagementCart
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         managementCart = ManagementCart(this)
-
         getBundleExtra()
-        setVariable()
-        setBlurEffect()
+        setupViews()
     }
 
-    fun setBlurEffect() {
-        val radius = 10f
-        val decorView: View = this.window.decorView
-        val rootView = decorView.findViewById<ViewGroup>(android.R.id.content)
-        val windowBackground: Drawable = decorView.background
-
-        binding.blurView.setupWith(rootView, RenderScriptBlur(this))
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-        binding.blurView.outlineProvider = ViewOutlineProvider.BACKGROUND
-        binding.blurView.clipToOutline = true
-
-        binding.blurView2.setupWith(rootView, RenderScriptBlur(this))
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-        binding.blurView2.outlineProvider = ViewOutlineProvider.BACKGROUND
-        binding.blurView2.clipToOutline = true
+    private fun getBundleExtra() {
+        foodObject = intent.getSerializableExtra("object") as? Foods ?: Foods()
+        // Tạo key ngay khi nhận dữ liệu
+        if (foodObject.Key.isEmpty()) {
+            foodObject.Key = foodObject.generateKey()
+        }
     }
 
-    fun setVariable() {
-        binding.backBtn.setOnClickListener {
-            finish()
-        }
+    private fun setupViews() {
+        // Hiển thị thông tin sản phẩm
+        Glide.with(this)
+            .load(foodObject.ImagePath)
+            .into(binding.pic)
 
-        Log.d("DetailActivity", "Dữ liệu đối tượng: $objects")
+        binding.titleTxt.text = foodObject.Title
+        binding.priceTxt.text = "$${foodObject.Price}"
+        binding.descriptionTxt.text = foodObject.Description
+        binding.ratingTxt.text = "${foodObject.Star} Rating"
+        binding.ratingBar.rating = foodObject.Star.toFloat()
+        updateTotalPrice()
 
-        if (!objects.ImagePath.isNullOrEmpty()) {
-            Log.d("DetailActivity", "Tải ảnh từ đường dẫn: ${objects.ImagePath}")
-            Glide.with(this)
-                .load(objects.ImagePath)
-                .into(binding.pic)
-        } else {
-            Log.e("GlideError", "ImagePath is null or empty")
-        }
-
-        binding.priceTxt.text = "$${objects.Price}"
-        binding.titleTxt.text = objects.Title
-        binding.descriptionTxt.text = objects.Description
-        binding.ratingTxt.text = "${objects.Star} Rating"
-        binding.ratingBar.rating = objects.Star.toFloat()
-        binding.totalTxt.text = String.format(java.util.Locale.US, "$%.2f", num * objects.Price)
-
+        // Xử lý nút tăng/giảm số lượng
         binding.plusBtn.setOnClickListener {
-            num += 1
-            Log.d("DetailActivity", "Số lượng sau khi tăng: $num")
-            binding.numTxt.text = String.format(java.util.Locale.US, "%d", num)
-            binding.totalTxt.text = String.format(java.util.Locale.US, "$%.2f", num * objects.Price)
+            quantity++
+            binding.numTxt.text = quantity.toString()
+            updateTotalPrice()
         }
 
         binding.minusBtn.setOnClickListener {
-            if (num > 1) {
-                num -= 1
-                Log.d("DetailActivity", "Số lượng sau khi giảm: $num")
-                binding.numTxt.text = String.format(java.util.Locale.US, "%d", num)
-                binding.totalTxt.text = String.format(java.util.Locale.US, "$%.2f", num * objects.Price)
+            if (quantity > 1) {
+                quantity--
+                binding.numTxt.text = quantity.toString()
+                updateTotalPrice()
             }
         }
 
+        // Xử lý nút thêm vào giỏ hàng
         binding.addBtn.setOnClickListener {
-            objects.numberInChart = num
-            Log.d("DetailActivity", "Thêm vào giỏ hàng: ${objects.Title}, Số lượng: $num")
-            managementCart.insertFood(objects)
+            foodObject.numberInChart = quantity
+            binding.addBtn.isEnabled = false
+            binding.addBtn.text = "Đang thêm..."
+
+            managementCart.insertFood(foodObject) { success ->
+                if (success) {
+                    binding.addBtn.text = "Đã thêm"
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        finish()
+                    }, 1000)
+                } else {
+                    binding.addBtn.isEnabled = true
+                    binding.addBtn.text = "Thêm vào giỏ"
+                }
+            }
         }
+
+        binding.backBtn.setOnClickListener { finish() }
     }
 
-    fun getBundleExtra() {
-        @Suppress("DEPRECATION")
-        objects = intent.getSerializableExtra("object") as? Foods ?: Foods()
-        Log.d("DetailActivity", "Nhận dữ liệu từ Intent: $objects")
+    private fun updateTotalPrice() {
+        binding.totalTxt.text = "$${"%.2f".format(quantity * foodObject.Price)}"
     }
 }

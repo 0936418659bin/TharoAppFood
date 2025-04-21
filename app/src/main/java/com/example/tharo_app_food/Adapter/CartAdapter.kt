@@ -21,12 +21,17 @@ import eightbitlab.com.blurview.BlurView
 import eightbitlab.com.blurview.RenderScriptBlur
 
 class CartAdapter(
-    private val listItemSelected: ArrayList<Foods>,
-    context: Context,
+    private var listItemSelected: ArrayList<Foods>,
+    private val context: Context,
     private val changeNumberItemsListener: ChangeNumberItemsListener
 ) : RecyclerView.Adapter<CartAdapter.ViewHolder>() {
 
     private val managementCart = ManagementCart(context)
+
+    fun updateList(newList: ArrayList<Foods>) {
+        listItemSelected = newList
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflate = LayoutInflater.from(parent.context)
@@ -35,54 +40,53 @@ class CartAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = listItemSelected[position]
 
-        var radius: Float = 10f
-        var decorView: View = (holder.itemView.context as Activity).window.decorView
-        val rootView = decorView.findViewById<ViewGroup>(android.R.id.content)
-        var windowBackground: Drawable = decorView.background
-
-        holder.blurView.setupWith(rootView, RenderScriptBlur(holder.itemView.context))
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-        holder.blurView.outlineProvider = ViewOutlineProvider.BACKGROUND
-        holder.blurView.clipToOutline = true
-
+        // Hiển thị thông tin sản phẩm
         Glide.with(holder.itemView.context)
-            .load(listItemSelected[position].ImagePath)
-            .transform(CenterCrop(), RoundedCorners(30))
+            .load(item.ImagePath)
             .into(holder.pic)
 
-        holder.title.text = listItemSelected[position].Title
-        holder.feeEachItem.text = "$" + listItemSelected[position].Price.toString()
+        holder.title.text = item.Title
+        holder.feeEachItem.text = "$${item.Price}"
+        holder.totalEachItem.text = "${item.numberInChart} x $${item.Price}"
+        holder.num.text = item.numberInChart.toString()
 
-        holder.totalEachItem.text = "${listItemSelected[position].numberInChart} x $${listItemSelected[position].Price}"
-
-        holder.num.text = listItemSelected[position].numberInChart.toString()
-
+        // Xử lý tăng số lượng
         holder.plusItem.setOnClickListener {
-            managementCart.plusNumberItem(listItemSelected, position, object : ChangeNumberItemsListener {
-                override fun change() {
-                    changeNumberItemsListener.change()
-                    notifyDataSetChanged()
-                }
-            })
+            item.numberInChart++
+            updateCartAndRefresh()
         }
 
+        // Xử lý giảm số lượng
         holder.minusItem.setOnClickListener {
-            managementCart.minusNumberItem(listItemSelected, position, object : ChangeNumberItemsListener {
-                override fun change() {
-                    changeNumberItemsListener.change()
-                    notifyDataSetChanged()
+            if (item.numberInChart > 1) {
+                item.numberInChart--
+                updateCartAndRefresh()
+            } else {
+                // Nếu số lượng = 1 mà click giảm thì xóa item
+                managementCart.removeItem(item) { success ->
+                    if (success) {
+                        listItemSelected.removeAt(position)
+                        notifyItemRemoved(position)
+                        notifyItemRangeChanged(position, listItemSelected.size)
+                        changeNumberItemsListener.change()
+                    }
                 }
-            })
+            }
         }
-
-
     }
 
-    override fun getItemCount(): Int {
-        return listItemSelected.size
+    private fun updateCartAndRefresh() {
+        managementCart.updateCart(listItemSelected) { success ->
+            if (success) {
+                notifyDataSetChanged()
+                changeNumberItemsListener.change()
+            }
+        }
     }
+
+    override fun getItemCount(): Int = listItemSelected.size
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val title: TextView = itemView.findViewById(R.id.titleTxt)
@@ -94,5 +98,4 @@ class CartAdapter(
         val num: TextView = itemView.findViewById(R.id.numTxt2)
         val blurView: BlurView = itemView.findViewById(R.id.blurView)
     }
-
 }

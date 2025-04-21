@@ -17,12 +17,18 @@ data class Foods(
     var TimeId: Int = 0,
     var TimeValue: Int = 0,
     var Title: String = "",
-    var numberInChart: Int = 0
+    var numberInChart: Int = 0,
+    var Key: String = ""
 ) : Serializable {
     // Constructor không tham số để Firebase có thể deserialize object
-    constructor() : this(0, "", false, 0, 0, 0.0, "", 0, 0.0, 0, 0, "", 0)
+    constructor() : this(0, "", false, 0, 0, 0.0, "", 0, 0.0, 0, 0, "", 0, "")
 
     override fun toString(): String {
         return Title.ifEmpty { "Unknown Location" }
     }
+
+    fun generateKey(): String {
+        return Title.replace("[^a-zA-Z0-9]".toRegex(), "_")
+    }
+
 }
