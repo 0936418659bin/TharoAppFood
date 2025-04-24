@@ -39,6 +39,7 @@ import com.google.firebase.database.ValueEventListener
 import com.example.tharo_app_food.Domain.Price
 import com.example.tharo_app_food.Domain.Time
 import com.example.tharo_app_food.Domain.User
+import com.example.tharo_app_food.Helper.ManagementCart
 import com.example.tharo_app_food.R
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
@@ -493,8 +494,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
     private fun performLogout() {
+        FirebaseAuth.getInstance().signOut()
+        ManagementCart(this).clear()
         clearLoginSession()
-
         // Điều hướng đến màn hình đăng nhập
         val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
