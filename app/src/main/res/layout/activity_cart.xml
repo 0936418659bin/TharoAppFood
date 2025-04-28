@@ -238,7 +238,7 @@
             </eightbitlab.com.blurview.BlurView>
 
             <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/button2"
+                android:id="@+id/btn_payment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
@@ -246,7 +246,7 @@
                 style="@android:style/Widget.Button"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                android:text="Place Order" />
+                android:text="Thanh toán" />
         </LinearLayout>
 
     </ScrollView>

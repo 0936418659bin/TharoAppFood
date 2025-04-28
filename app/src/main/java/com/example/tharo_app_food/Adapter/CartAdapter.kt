@@ -19,6 +19,8 @@ import com.example.tharo_app_food.Helper.ManagementCart
 import com.example.tharo_app_food.R
 import eightbitlab.com.blurview.BlurView
 import eightbitlab.com.blurview.RenderScriptBlur
+import java.text.NumberFormat
+import java.util.Locale
 
 class CartAdapter(
     private var listItemSelected: ArrayList<Foods>,
@@ -47,9 +49,11 @@ class CartAdapter(
             .load(item.ImagePath)
             .into(holder.pic)
 
+        val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+
         holder.title.text = item.Title
-        holder.feeEachItem.text = "$${item.Price}"
-        holder.totalEachItem.text = "${item.numberInChart} x $${item.Price}"
+        holder.feeEachItem.text = currencyFormatter.format(item.Price)
+        holder.totalEachItem.text = "${item.numberInChart} x ${currencyFormatter.format(item.Price)}"
         holder.num.text = item.numberInChart.toString()
 
         // Xử lý tăng số lượng

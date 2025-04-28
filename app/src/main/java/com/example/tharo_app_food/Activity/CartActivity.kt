@@ -20,6 +20,8 @@ import com.example.tharo_app_food.R
 import com.example.tharo_app_food.databinding.ActivityCartBinding
 import com.google.firebase.auth.FirebaseAuth
 import eightbitlab.com.blurview.RenderScriptBlur
+import java.text.NumberFormat
+import java.util.Locale
 
 class CartActivity : BaseActivity() {
     private lateinit var binding: ActivityCartBinding
@@ -93,6 +95,17 @@ class CartActivity : BaseActivity() {
     private fun setupViews() {
         binding.backBtn.setOnClickListener { finish() }
 
+        binding.btnPayment.setOnClickListener {
+            // Lấy tổng tiền từ TextView (đã tính trong calculateCart())
+            val totalAmount = binding.totalTxt.text.toString().replace("[^\\d.]".toRegex(), "") // "$10.00" (định dạng từ calculateCart)
+
+            // Chuyển sang PaymentActivity và truyền tổng tiền
+            val intent = Intent(this, PaymentActivity::class.java).apply {
+                putExtra("TOTAL_AMOUNT", totalAmount)
+            }
+            startActivity(intent)
+        }
+
         // Khởi tạo RecyclerView
         binding.cartView.layoutManager = LinearLayoutManager(this)
         adapter = CartAdapter(arrayListOf(), this, object : ChangeNumberItemsListener {
@@ -126,10 +139,12 @@ class CartActivity : BaseActivity() {
             val tax = subtotal * percentTax
             val total = subtotal + tax + delivery
 
-            binding.totalFeeTxt.text = "$${"%.2f".format(subtotal)}"
-            binding.taxTxt.text = "$${"%.2f".format(tax)}"
-            binding.delivery.text = "$${"%.2f".format(delivery)}"
-            binding.totalTxt.text = "$${"%.2f".format(total)}"
+            val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+
+            binding.totalFeeTxt.text = currencyFormatter.format(subtotal)
+            binding.taxTxt.text = currencyFormatter.format(tax)
+            binding.delivery.text = currencyFormatter.format(delivery)
+            binding.totalTxt.text = currencyFormatter.format(total)
         }
     }
 }
