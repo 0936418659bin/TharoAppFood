@@ -12,4 +12,55 @@
     <color name="gray_600">#FF757575</color>
     <color name="primary_color">#FF6200EE</color>
     <color name="blue_500">#2196F3</color>
+    <color name="gray">#4E5156</color>
+    <color name="card_blue">#2196F3</color>
+    <color name="green">#4BAF4F</color>
+    <!-- Màu chủ đạo (Primary) -->
+    <color name="primary">#6750A4</color>
+    <color name="onPrimary">#FFFFFF</color>
+    <color name="primaryContainer">#EADDFF</color>
+    <color name="onPrimaryContainer">#21005D</color>
+
+    <!-- Màu phụ (Secondary) -->
+    <color name="secondary">#625B71</color>
+    <color name="onSecondary">#FFFFFF</color>
+    <color name="secondaryContainer">#E8DEF8</color>
+    <color name="onSecondaryContainer">#1D192B</color>
+
+    <!-- Màu bề mặt (Surface) -->
+    <color name="surface">#FFFBFE</color>
+    <color name="onSurface">#1C1B1F</color>
+    <color name="surfaceVariant">#E7E0EC</color>
+    <color name="onSurfaceVariant">#49454F</color>
+    <color name="surfaceContainer">#F3EDF7</color>
+    <color name="surfaceContainerHigh">#ECE6F0</color>
+    <color name="surfaceContainerHighest">#E6E0E9</color>
+
+    <!-- Màu nền (Background) -->
+    <color name="background">#FFFBFE</color>
+    <color name="onBackground">#1C1B1F</color>
+
+    <!-- Màu đường viền (Outline) -->
+    <color name="outline">#79747E</color>
+    <color name="outlineVariant">#CAC4D0</color>
+
+    <!-- Màu lỗi (Error) -->
+    <color name="error">#B3261E</color>
+    <color name="onError">#FFFFFF</color>
+    <color name="errorContainer">#F9DEDC</color>
+    <color name="onErrorContainer">#410E0B</color>
+
+    <!-- Màu thành công (Success) -->
+    <color name="success">#218838</color>
+
+    <!-- Màu cảnh báo (Warning) -->
+    <color name="warning">#FFC107</color>
+
+    <!-- Màu thông tin (Info) -->
+    <color name="info">#17A2B8</color>
+
+    <!-- Màu cho trạng thái ripple/hover -->
+    <color name="rippleColor">#1F000000</color>
+    <color name="hoverColor">#0A000000</color>
+
 </resources>

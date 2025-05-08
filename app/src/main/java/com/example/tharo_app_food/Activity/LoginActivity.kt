@@ -160,9 +160,8 @@ class LoginActivity : AppCompatActivity() {
         // Chuyển hướng
         val destination = when (user.Role) {
             "Admin" -> {
-                // Intent(this, AdminActivity::class.java)
                 showToast("Chào mừng Admin")
-                return
+                Intent(this, AdminActivity::class.java)
             }
             else -> Intent(this, MainActivity::class.java)
         }

@@ -4,4 +4,26 @@
         <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
         <item name="android:windowExitAnimation">@android:anim/fade_out</item>
     </style>
+    <style name="RoundedSearchBar" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- Shape appearance cho FAB -->
+    <style name="RoundedFab" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- Style cho Circle ImageView -->
+    <style name="CircleImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Selector màu cho Chip -->
+    <selector xmlns:android="http://schemas.android.com/apk/res/android" name="filter_chip_colors">
+        <item android:color="?attr/colorSurface" android:state_checked="false"/>
+        <item android:color="?attr/colorSecondaryContainer" android:state_checked="true"/>
+    </selector>
 </resources>
