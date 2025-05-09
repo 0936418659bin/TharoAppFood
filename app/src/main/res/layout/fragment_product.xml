@@ -22,7 +22,6 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/surfaceContainerHigh"
             app:titleCentered="true"
-            app:navigationIcon="@drawable/ic_menu"
             app:titleTextColor="@color/onSurface">
 
             <com.google.android.material.textview.MaterialTextView
@@ -44,7 +43,7 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/default_user"
                     app:shapeAppearanceOverlay="@style/CircleImageView"
-                    android:contentDescription="@string/profile_icon"/>
+                    />
 
             </RelativeLayout>
         </com.google.android.material.appbar.MaterialToolbar>
@@ -72,8 +71,17 @@
                 android:tint="@color/primary"/>
         </com.google.android.material.search.SearchBar>
 
+        <!-- 👇 THÊM SearchView GẮN KÈM -->
+        <com.google.android.material.search.SearchView
+            android:id="@+id/searchView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_anchor="@id/searchBar" />
+
+
         <!-- Chip group cho bộ lọc nhanh -->
         <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -140,9 +148,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingTop="8dp"
-            android:paddingBottom="88dp"
-            tools:listitem="@layout/item_product"/>
+            android:padding="8dp" />
 
     </androidx.core.widget.NestedScrollView>
 

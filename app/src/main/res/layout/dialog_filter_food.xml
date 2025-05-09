@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Khoảng giá"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"/>
+
+    <com.google.android.material.slider.RangeSlider
+        android:id="@+id/sliderPrice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:valueFrom="0"
+        android:valueTo="100"
+        android:stepSize="5"
+        app:labelBehavior="withinBounds"/>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Đánh giá tối thiểu"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"/>
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/sliderRating"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:valueFrom="0"
+        android:valueTo="5"
+        android:stepSize="0.5"
+        app:labelBehavior="withinBounds"/>
+</LinearLayout>

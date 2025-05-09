@@ -2,4 +2,5 @@
 <resources>
     <dimen name="cart_item_height">150dp</dimen> <!-- Chiều cao mỗi item -->
     <dimen name="max_cart_height">450dp</dimen> <!-- Tối đa 3 item -->
+    <dimen name="grid_spacing">8dp</dimen>
 </resources>
