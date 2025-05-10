@@ -9,4 +9,8 @@ data class Category(
     var Name: String = ""
 ) {
     constructor() : this(0, " ","")
+
+    override fun toString(): String {
+        return Name
+    }
 }

@@ -14,8 +14,8 @@ import com.example.tharo_app_food.Adapter.ProductAdapter
 import com.example.tharo_app_food.Config.GridSpacingItemDecoration
 import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.Filter.ProductFilterDialog
-import com.example.tharo_app_food.Handler.AddProductDialog
-import com.example.tharo_app_food.Handler.ProductDetailDialog
+import com.example.tharo_app_food.Dialog.AddProductDialog
+import com.example.tharo_app_food.Dialog.ProductDetailDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -50,7 +50,7 @@ class ProductFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Khởi tạo Firebase
-        database = FirebaseDatabase.getInstance()
+        database = FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
         foodsRef = database.getReference("Foods")
 
         initViews(view)

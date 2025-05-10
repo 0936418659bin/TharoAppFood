@@ -63,4 +63,6 @@
     <color name="rippleColor">#1F000000</color>
     <color name="hoverColor">#0A000000</color>
 
+    <color name="hint_text_color">#6200EE</color>
+
 </resources>

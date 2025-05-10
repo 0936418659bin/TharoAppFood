@@ -1,4 +1,4 @@
-package com.example.tharo_app_food.Handler
+package com.example.tharo_app_food.Dialog
 
 import android.app.Dialog
 import android.os.Bundle

@@ -14,4 +14,7 @@
         <item name="cornerSize">12dp</item>
     </style>
 
+    <style name="RoundedDialogTheme" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Material3.MediumComponent</item>
+    </style>
 </resources>
