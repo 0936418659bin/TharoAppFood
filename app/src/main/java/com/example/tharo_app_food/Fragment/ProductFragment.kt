@@ -183,10 +183,8 @@ class ProductFragment : Fragment() {
     }
 
     private fun showProductDetail(food: Foods) {
-        ProductDetailDialog(food).show(
-            parentFragmentManager,
-            "ProductDetailDialog"
-        )
+        val dialog = ProductDetailDialog.newInstance(food)
+        dialog.show(parentFragmentManager, "ProductDetailDialog")
     }
 
     private fun showAddProductDialog() {

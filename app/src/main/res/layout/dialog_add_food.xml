@@ -90,6 +90,72 @@
                 android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/categoryDropdown1"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Chọn khoảng giá"
+            app:startIconDrawable="@drawable/tag"
+            app:startIconTint="?attr/colorOnSurfaceVariant">
+
+            <AutoCompleteTextView
+                android:id="@+id/spinnerPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:paddingStart="45dp"
+                android:clickable="true"
+                android:focusable="false"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/categoryDropdown2"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Chọn khoảng thời gian"
+            app:startIconDrawable="@drawable/timeleft"
+            app:startIconTint="?attr/colorOnSurfaceVariant">
+
+            <AutoCompleteTextView
+                android:id="@+id/spinnerTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:paddingStart="45dp"
+                android:clickable="true"
+                android:focusable="false"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/categoryDropdown3"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Chọn nơi xuất xứ"
+            app:startIconDrawable="@drawable/location"
+            app:startIconTint="?attr/colorOnSurfaceVariant">
+
+            <AutoCompleteTextView
+                android:id="@+id/spinnerLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:paddingStart="45dp"
+                android:clickable="true"
+                android:focusable="false"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
         <!-- Giá món ăn -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"

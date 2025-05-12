@@ -3,6 +3,7 @@ package com.example.tharo_app_food.Dialog
 import android.Manifest
 import android.app.Activity
 import android.app.Dialog
+import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -20,56 +21,78 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import com.example.tharo_app_food.Domain.Category
-import com.example.tharo_app_food.Domain.Foods
-import com.example.tharo_app_food.Domain.ImageKitService
+import com.example.tharo_app_food.Domain.*
 import com.example.tharo_app_food.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 
+
+
 class AddProductDialog : DialogFragment() {
     private var listener: ((Foods) -> Unit)? = null
     private lateinit var selectedImageUri: Uri
-    private var selectedCategoryId: Int = 0
-    private var selectedCategoryName: String = ""
-    private val categories = mutableListOf<Category>()
-    private lateinit var categoryDropdown: AutoCompleteTextView
+    private var selectedCategory = Category(0, "", "")
+    private var selectedPrice = Price(0, "")
+    private var selectedTime = Time(0, "")
+    private var selectedLocation = Location(0, "")
+    private var progressDialog: ProgressDialog? = null
     private var uploadJob: Job? = null
 
-    // ImageKit service
-    private val retrofit by lazy {
+    private val TAG = "AddProductDialog"
+
+    private val database by lazy {
+        FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
+    }
+
+    private suspend fun getNextFoodId(): Int = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = database.getReference("Foods").get().await()
+            if (!snapshot.exists()) {
+                Log.d(TAG, "Không có sản phẩm nào, bắt đầu với ID 1")
+                return@withContext 1
+            }
+
+            val numericKeys = snapshot.children.mapNotNull { it.key?.toIntOrNull() }
+            val nextId = if (numericKeys.isNotEmpty()) numericKeys.maxOrNull()!! + 1 else 1
+
+            Log.d(TAG, "ID tiếp theo sẽ là: $nextId")
+            return@withContext nextId
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi khi lấy ID tiếp theo", e)
+            return@withContext 1
+        }
+    }
+
+    private val imageKitService by lazy {
         Retrofit.Builder()
             .baseUrl("http://192.168.56.1:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    private val imageKitService by lazy {
-        retrofit.create(ImageKitService::class.java)
+            .create(ImageKitService::class.java)
     }
 
     companion object {
         private const val PICK_IMAGE_REQUEST = 100
-        private const val TAG = "AddProductDialog"
         private const val REQUEST_READ_STORAGE_PERMISSION = 101
     }
 
@@ -78,347 +101,362 @@ class AddProductDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        Log.d(TAG, "onCreateDialog: Creating dialog")
-        val builder = MaterialAlertDialogBuilder(requireContext(), R.style.RoundedDialogTheme)
-        val inflater = requireActivity().layoutInflater
-        val view = inflater.inflate(R.layout.dialog_add_food, null)
+        val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_food, null)
 
-        categoryDropdown = view.findViewById(R.id.spinnerCategory)
-        Log.d(TAG, "Loading categories from Firebase")
-        loadCategoriesFromFirebase()
+        setupDropdowns(view)
         setupImagePicker(view)
+        setupDuplicateCleaner()
 
-        builder.setView(view)
+        return MaterialAlertDialogBuilder(requireContext(), R.style.RoundedDialogTheme)
+            .setView(view)
             .setTitle("Thêm món ăn mới")
             .setPositiveButton("Thêm") { _, _ ->
+                if (uploadJob?.isActive == true) {
+                    showToast("Đang tải lên, vui lòng đợi...")
+                    return@setPositiveButton
+                }
                 if (validateInputs(view)) {
                     uploadImageAndAddProduct(view)
                 }
             }
-            .setNegativeButton("Hủy") { _, _ ->
-                uploadJob?.cancel()
-            }
-
-        return builder.create()
+            .setNegativeButton("Hủy") { _, _ -> uploadJob?.cancel() }
+            .create()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        uploadJob?.cancel()
+        progressDialog?.dismiss()
+        Log.e("AddProductDialog", "onDestroyView được gọi, nhưng không cancel uploadJob nữa")
+    }
+
+    private fun setupDropdowns(view: View) {
+        loadDropdownData(
+            view.findViewById(R.id.spinnerCategory),
+            "Category",
+            Category::class.java
+        ) { selectedCategory = it }
+
+        loadDropdownData(
+            view.findViewById(R.id.spinnerPrice),
+            "Price",
+            Price::class.java
+        ) { selectedPrice = it }
+
+        loadDropdownData(
+            view.findViewById(R.id.spinnerTime),
+            "Time",
+            Time::class.java
+        ) { selectedTime = it }
+
+        loadDropdownData(
+            view.findViewById(R.id.spinnerLocation),
+            "Location",
+            Location::class.java
+        ) { selectedLocation = it }
+    }
+
+    private fun <T : Any> loadDropdownData(
+        dropdown: AutoCompleteTextView,
+        path: String,
+        clazz: Class<T>,
+        onSelect: (T) -> Unit
+    ) {
+        database.getReference(path).get().addOnSuccessListener { snapshot ->
+            val items = snapshot.children.mapNotNull { it.getValue(clazz) }
+            Log.d(TAG, "Loaded $path items: ${items.size}")
+            dropdown.setAdapter(createDropdownAdapter(items))
+            dropdown.setOnItemClickListener { _, _, position, _ ->
+                onSelect(items[position])
+                Log.d(TAG, "Selected $path: ${items[position]}")
+            }
+        }.addOnFailureListener {
+            Log.e(TAG, "Error loading $path", it)
+            showToast("Lỗi tải dữ liệu $path")
+        }
+    }
+
+    private fun <T> createDropdownAdapter(items: List<T>): ArrayAdapter<T> {
+        return object : ArrayAdapter<T>(requireContext(), R.layout.item_category_dropdown, items) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.item_category_dropdown, parent, false)
+                view.findViewById<TextView>(R.id.categoryName).text = getItemDisplayText(getItem(position))
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.item_category_dropdown_expanded, parent, false)
+                view.findViewById<TextView>(R.id.categoryName).text = getItemDisplayText(getItem(position))
+                return view
+            }
+        }
+    }
+
+    private fun <T> getItemDisplayText(item: T?): String = when (item) {
+        is Category -> item.Name
+        is Price -> item.Value
+        is Time -> item.Value
+        is Location -> item.loc
+        else -> ""
+    }
+
+    private fun setupImagePicker(view: View) {
+        view.findViewById<MaterialButton>(R.id.btn_image).setOnClickListener {
+            if (hasStoragePermission()) openImagePicker() else requestStoragePermission()
+        }
+    }
+
+    private fun hasStoragePermission() =
+        ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+    private fun requestStoragePermission() {
+        requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_READ_STORAGE_PERMISSION)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == REQUEST_READ_STORAGE_PERMISSION && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            openImagePicker()
+        } else {
+            showToast("Cần cấp quyền truy cập để chọn ảnh")
+        }
+    }
+
+    private fun openImagePicker() {
+        Intent(Intent.ACTION_PICK).apply {
+            type = "image/*"
+            startActivityForResult(this, PICK_IMAGE_REQUEST)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                selectedImageUri = uri
+                Log.d(TAG, "Image picked: $selectedImageUri")
+                displaySelectedImage(uri)
+                view?.findViewById<MaterialButton>(R.id.btn_image)?.visibility = View.GONE
+            } ?: showToast("Không thể lấy ảnh đã chọn")
+        }
+    }
+
+    private fun displaySelectedImage(uri: Uri) {
+        dialog?.findViewById<ImageView>(R.id.ivFoodImage3)?.let {
+            Glide.with(this).load(uri).centerCrop().into(it)
+        }
     }
 
     private fun validateInputs(view: View): Boolean {
-        if (!isAdded) return false
-
         return when {
-            !::selectedImageUri.isInitialized -> {
-                showToast("Vui lòng chọn ảnh")
-                false
-            }
-            selectedCategoryId == 0 -> {
-                showToast("Vui lòng chọn danh mục")
-                false
-            }
+            !::selectedImageUri.isInitialized -> showToast("Vui lòng chọn ảnh").let { false }
+            selectedCategory.Id == 0 -> showToast("Vui lòng chọn danh mục").let { false }
             view.findViewById<TextInputEditText>(R.id.etFoodName).text.isNullOrEmpty() -> {
-                showToast("Vui lòng nhập tên món ăn")
-                false
+                Log.e(TAG, "Tên món ăn chưa được nhập")
+                showToast("Vui lòng nhập tên món ăn").let { false }
             }
             view.findViewById<TextInputEditText>(R.id.etPrice).text.isNullOrEmpty() -> {
-                showToast("Vui lòng nhập giá")
-                false
+                Log.e(TAG, "Giá món ăn chưa được nhập")
+                showToast("Vui lòng nhập giá").let { false }
             }
             else -> true
         }
     }
 
     private fun showToast(message: String) {
-        if (isAdded) {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun setupImagePicker(view: View) {
-        view.findViewById<MaterialButton>(R.id.btn_image).setOnClickListener {
-            if (isAdded && ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                openImagePicker()
-            } else if (isAdded) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    REQUEST_READ_STORAGE_PERMISSION
-                )
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == REQUEST_READ_STORAGE_PERMISSION &&
-            grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-            isAdded
-        ) {
-            openImagePicker()
-        } else if (isAdded) {
-            showToast("Cần cấp quyền truy cập để chọn ảnh")
-        }
-    }
-
-    private fun openImagePicker() {
-        try {
-            if (!isAdded) return
-            val intent = Intent(Intent.ACTION_PICK).apply {
-                type = "image/*"
-            }
-            startActivityForResult(intent, PICK_IMAGE_REQUEST)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error opening image picker", e)
-            if (isAdded) {
-                showToast("Không thể mở thư viện ảnh")
-            }
-        }
-    }
-
-    private fun loadCategoriesFromFirebase() {
-        if (!isAdded) return
-
-        val database = FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
-        val categoriesRef = database.getReference("Category")
-
-        categoriesRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!isAdded) return
-
-                categories.clear()
-                categories.add(Category(0, "Chọn danh mục", ""))
-
-                for (categorySnapshot in snapshot.children) {
-                    try {
-                        val id = categorySnapshot.child("Id").getValue(Int::class.java) ?: 0
-                        val name = categorySnapshot.child("Name").getValue(String::class.java) ?: ""
-                        val image = categorySnapshot.child("ImagePath").getValue(String::class.java) ?: ""
-
-                        categories.add(Category(id, image, name))
-                    } catch (e: Exception) {
-                        if (isAdded) {
-                            showToast("Lỗi khi tải danh mục")
-                        }
-                    }
-                }
-
-                val adapter = object : ArrayAdapter<Category>(
-                    requireContext(),
-                    android.R.layout.simple_dropdown_item_1line,
-                    categories
-                ) {
-                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                        val view = convertView ?: LayoutInflater.from(context)
-                            .inflate(R.layout.item_category_dropdown, parent, false)
-                        val category = getItem(position)
-                        view.findViewById<TextView>(R.id.categoryName).text = category?.Name
-                        if (position == 0) {
-                            view.findViewById<TextView>(R.id.categoryName).setTextColor(
-                                ContextCompat.getColor(context, R.color.hint_text_color)
-                            )
-                        }
-                        return view
-                    }
-
-                    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                        val view = convertView ?: LayoutInflater.from(context)
-                            .inflate(R.layout.item_category_dropdown_expanded, parent, false)
-                        val category = getItem(position)
-                        view.findViewById<TextView>(R.id.categoryName).text = category?.Name
-                        return view
-                    }
-
-                    override fun isEnabled(position: Int): Boolean {
-                        return position != 0
-                    }
-                }
-
-                categoryDropdown.setAdapter(adapter)
-                categoryDropdown.setOnItemClickListener { _, _, position, _ ->
-                    if (position > 0) {
-                        selectedCategoryId = categories[position].Id
-                        selectedCategoryName = categories[position].Name
-                    } else {
-                        selectedCategoryId = 0
-                        selectedCategoryName = ""
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                if (isAdded) {
-                    showToast("Lỗi tải danh mục: ${error.message}")
-                }
-            }
-        })
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (!isAdded) return
-
-        if (requestCode == PICK_IMAGE_REQUEST) {
-            when (resultCode) {
-                Activity.RESULT_OK -> {
-                    data?.data?.let { uri ->
-                        try {
-                            selectedImageUri = Uri.parse(uri.toString())
-                            displaySelectedImage(selectedImageUri)
-                            view?.findViewById<MaterialButton>(R.id.btn_image)?.visibility = View.GONE
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error processing image URI", e)
-                            showErrorToast("Lỗi xử lý ảnh: ${e.localizedMessage}")
-                        }
-                    } ?: run {
-                        showErrorToast("Không thể lấy ảnh đã chọn")
-                    }
-                }
-                Activity.RESULT_CANCELED -> {
-                    Log.d(TAG, "Image selection cancelled by user")
-                }
-            }
-        }
-    }
-
-    private fun displaySelectedImage(uri: Uri) {
-        if (!isAdded) return
-
-        try {
-            dialog?.window?.decorView?.let { dialogView ->
-                dialogView.findViewById<ImageView>(R.id.ivFoodImage3)?.let { imageView ->
-                    Glide.with(this)
-                        .load(uri)
-                        .centerCrop()
-                        .into(imageView)
-
-                    dialogView.findViewById<MaterialButton>(R.id.btn_image)?.visibility = View.GONE
-                } ?: run {
-                    showErrorToast("Lỗi hệ thống: Không tìm thấy view hiển thị ảnh")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error displaying image", e)
-            showErrorToast("Lỗi hiển thị ảnh: ${e.localizedMessage}")
-        }
-    }
-
-    private fun showErrorToast(message: String) {
-        if (isAdded) {
-            requireActivity().runOnUiThread {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-            }
+        activity?.runOnUiThread {
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun uploadImageAndAddProduct(view: View) {
-        if (!isAdded) return
+        progressDialog = ProgressDialog(requireContext()).apply {
+            setMessage("Đang tải lên...")
+            setCancelable(false)
+            show()
+        }
 
-        uploadJob = lifecycleScope.launch {
+        uploadJob = requireActivity().lifecycleScope.launch {
             try {
-                val context = requireContext().applicationContext
-                showToast("Đang tải lên...")
 
-                val imageUrl = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(selectedImageUri)?.use { inputStream ->
-                        val tempFile = File.createTempFile(
-                            "food_${System.currentTimeMillis()}",
-                            ".jpg",
-                            context.cacheDir
-                        ).apply {
-                            outputStream().use { output -> inputStream.copyTo(output) }
-                        }
+                cleanDuplicateProducts()
 
-                        try {
-                            val filePart = MultipartBody.Part.createFormData(
-                                "file",
-                                tempFile.name,
-                                tempFile.asRequestBody("image/*".toMediaTypeOrNull())
-                            )
+                val imageUrl = uploadImage() ?: throw Exception("Lỗi upload ảnh")
+                val food = createFood(view, imageUrl)
 
-                            val fileNamePart = "food_${System.currentTimeMillis()}.jpg"
-                                .toRequestBody("text/plain".toMediaType())
-                            val folderPart = "/food_images/"
-                                .toRequestBody("text/plain".toMediaType())
-
-                            imageKitService.uploadImage(filePart, fileNamePart, folderPart).url
-                        } finally {
-                            tempFile.delete()
-                        }
-                    } ?: throw IllegalStateException("Không thể đọc ảnh")
+                // Thêm bước validate title
+                if (food.Title.isBlank() || food.Title.any { it.isWhitespace() }) {
+                    throw Exception("Tiêu đề không được để trống hoặc chứa khoảng trắng")
                 }
 
-                val newFood = createFoodFromInput(view, imageUrl)
+                saveFood(food)
 
-                withContext(Dispatchers.IO) {
-                    saveFoodToFirebase(newFood)
-                }
-
-                if (isAdded) {
-                    withContext(Dispatchers.Main) {
-                        showToast("Thêm món ăn thành công")
-                        listener?.invoke(newFood)
-                        dismiss()
-                    }
+                withContext(Dispatchers.Main) {
+                    showToast("Thêm món ăn thành công")
+                    listener?.invoke(food)
+                    dismissAllowingStateLoss()
                 }
             } catch (e: Exception) {
-                if (isAdded) {
-                    val errorMessage = when (e) {
-                        is HttpException -> {
-                            val errorBody = e.response()?.errorBody()?.string()
-                            "Lỗi server: ${e.code()}, $errorBody"
-                        }
-                        else -> "Lỗi: ${e.message ?: "Không xác định"}"
-                    }
+                Log.e(TAG, "Lỗi: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    showToast("Lỗi: ${e.message ?: "Không xác định"}")
+                }
+            } finally {
+                progressDialog?.dismiss()
+            }
+        }
+    }
 
-                    withContext(Dispatchers.Main) {
-                        showToast(errorMessage)
-                    }
+    private suspend fun uploadImage(): String? = withContext(Dispatchers.IO) {
+        var tempFile: File? = null
+        try {
+            Log.e("AddProductDialog", "Đang tạo file tạm từ Uri: $selectedImageUri")
+            val inputStream = activity?.contentResolver?.openInputStream(selectedImageUri)
+                ?: return@withContext null
+
+            tempFile = File.createTempFile(
+                "food_${System.currentTimeMillis()}",
+                ".jpg",
+                activity?.cacheDir
+            ).apply {
+                outputStream().use { output ->
+                    inputStream.copyTo(output)
                 }
             }
+
+            Log.e("AddProductDialog", "Tạo file tạm thành công: ${tempFile.absolutePath}")
+
+            val filePart = MultipartBody.Part.createFormData(
+                "file",
+                tempFile.name,
+                tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+            )
+
+            val response = imageKitService.uploadImage(
+                filePart,
+                "food_${System.currentTimeMillis()}.jpg".toRequestBody("text/plain".toMediaTypeOrNull()),
+                "/food_images/".toRequestBody("text/plain".toMediaTypeOrNull())
+            )
+
+            Log.e("AddProductDialog", "Phản hồi upload ảnh: ${response.url}")
+            return@withContext response.url
+        } catch (e: Exception) {
+            Log.e("AddProductDialog", "Lỗi upload ảnh: ${e.message}", e)
+            if (isAdded && !isDetached) {
+                withContext(Dispatchers.Main) {
+                    showToast("Lỗi upload ảnh: ${e.message}")
+                }
+            }
+            return@withContext null
+        } finally {
+            tempFile?.delete()
         }
     }
 
-    private fun createFoodFromInput(view: View, imageUrl: String): Foods {
-        return Foods().apply {
-            Title = view.findViewById<TextInputEditText>(R.id.etFoodName).text.toString()
-            Description = view.findViewById<TextInputEditText>(R.id.etDescription).text.toString()
-            Price = view.findViewById<TextInputEditText>(R.id.etPrice).text.toString().toDoubleOrNull() ?: 0.0
-            ImagePath = imageUrl
-            Star = view.findViewById<TextInputEditText>(R.id.etRating).text.toString().toDoubleOrNull() ?: 0.0
-            TimeValue = view.findViewById<TextInputEditText>(R.id.etTime).text.toString().toIntOrNull() ?: 0
-            BestFood = view.findViewById<MaterialCheckBox>(R.id.cbBestFood).isChecked
-            CategoryId = selectedCategoryId
-            LocationId = 1
-            PriceId = 0
-            TimeId = 0
-            numberInChart = 0
-            Key = "${Title}_${System.currentTimeMillis()}"
+    suspend fun cleanDuplicateProducts() = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = database.getReference("Foods").get().await()
+
+            snapshot.children.forEach { child ->
+                val title = child.child("title").getValue(String::class.java)
+                val key = child.key
+
+                // Kiểm tra null và điều kiện
+                if (title != null && key != null && key == title && !key.matches(Regex("\\d+"))) {
+                    child.ref.removeValue().await()
+                    Log.d(TAG, "Đã xóa sản phẩm trùng lặp: $key")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi khi dọn dẹp sản phẩm trùng lặp", e)
         }
     }
 
-    private fun saveFoodToFirebase(food: Foods) {
-        val database = FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
-        val foodsRef = database.getReference("Foods")
 
-        val newFoodRef = foodsRef.push()
-        food.Id = newFoodRef.key?.toIntOrNull() ?: System.currentTimeMillis().toInt()
+    private fun createFood(view: View, imageUrl: String): Foods = Foods().apply {
+        Title = view.findViewById<TextInputEditText>(R.id.etFoodName).text.toString()
+        Description = view.findViewById<TextInputEditText>(R.id.etDescription).text.toString()
+        Price = view.findViewById<TextInputEditText>(R.id.etPrice).text.toString().toDoubleOrNull() ?: 0.0
+        ImagePath = imageUrl
+        Star = view.findViewById<TextInputEditText>(R.id.etRating).text.toString().toDoubleOrNull() ?: 0.0
+        TimeValue = view.findViewById<TextInputEditText>(R.id.etTime).text.toString().toIntOrNull() ?: 0
+        BestFood = view.findViewById<MaterialCheckBox>(R.id.cbBestFood).isChecked
+        CategoryId = selectedCategory.Id
+        LocationId = selectedLocation.Id
+        PriceId = selectedPrice.Id
+        TimeId = selectedTime.Id
 
-        newFoodRef.setValue(food)
-            .addOnSuccessListener {
-                Log.d(TAG, "Food saved to Firebase: ${food.Id}")
+    }
+
+    private fun setupDuplicateCleaner() {
+        database.getReference("Foods").addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                lifecycleScope.launch {
+                    checkAndCleanDuplicate(snapshot)
+                }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to save food to Firebase", e)
+
+            // Các phương thức khác có thể để trống
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    private suspend fun checkAndCleanDuplicate(snapshot: DataSnapshot) {
+        val title = snapshot.child("title").getValue(String::class.java)
+        val key = snapshot.key
+
+        if (title != null && key != null && key == title && !key.matches(Regex("\\d+"))) {
+            // Đây là bản trùng lặp, cần xóa
+            try {
+                // Kiểm tra xem đã có bản gốc chưa
+                val originalExists = database.getReference("Foods").child(key).get().await().exists()
+
+                if (!originalExists) {
+                    // Nếu không có bản gốc, không xóa (trường hợp thêm mới)
+                    return
+                }
+
+                // Xóa bản trùng lặp
+                snapshot.ref.removeValue().await()
+                Log.d(TAG, "Đã xóa TỰ ĐỘNG sản phẩm trùng lặp: $key")
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi khi xóa tự động sản phẩm trùng lặp", e)
             }
+        }
+    }
+
+    private suspend fun deleteDuplicateImmediately(title: String, originalId: String) {
+        try {
+            // Kiểm tra và xóa sản phẩm có key bằng title nhưng khác với ID gốc
+            val snapshot = database.getReference("Foods").child(title).get().await()
+
+            if (snapshot.exists() && snapshot.key != originalId) {
+                database.getReference("Foods").child(title).removeValue().await()
+                Log.d(TAG, "Đã xóa NGAY sản phẩm trùng lặp với title: $title")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi khi xóa sản phẩm trùng lặp ngay lập tức", e)
+        }
+    }
+
+    private suspend fun saveFood(food: Foods) = withContext(Dispatchers.IO) {
+        try {
+            // Bước 1: Lấy ID tiếp theo
+            val nextId = getNextFoodId()
+            food.Id = nextId
+
+            // Bước 2: Lưu sản phẩm mới
+            database.getReference("Foods").child(nextId.toString()).setValue(food).await()
+            Log.d(TAG, "Đã lưu sản phẩm với ID: ${food.Id}")
+
+            // Bước 3: Xóa ngay lập tức sản phẩm trùng lặp (nếu có)
+            deleteDuplicateImmediately(food.Title, nextId.toString())
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Lỗi khi lưu sản phẩm", e)
+            throw e
+        }
     }
 }
