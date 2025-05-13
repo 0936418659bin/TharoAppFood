@@ -14,4 +14,9 @@
     <string name="processing">Đang xử lý…</string>
     <string name="send_reset_link">Gửi liên kết đặt lại</string>
     <string name="reset_email_sent_message">Liên kết đặt lại mật khẩu đã được gửi đến %s. Vui lòng kiểm tra hộp thư đến hoặc thư mục spam.</string>
+    <string name="category_image_desc">Ảnh danh mục</string>
+    <string name="select_image">Chọn ảnh</string>
+    <string name="category_name_hint">Tên danh mục</string>
+    <string name="category_description_hint">Mô tả danh mục (tuỳ chọn)</string>
+    <string name="add_category">Thêm danh mục</string>
 </resources>

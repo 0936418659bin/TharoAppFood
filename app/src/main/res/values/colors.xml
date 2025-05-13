@@ -65,4 +65,9 @@
 
     <color name="hint_text_color">#6200EE</color>
 
+    <color name="onPrimaryContainer1">#FFFFFF</color>
+
+    <color name="surfaceContainerHigh1">#F2F2F7</color>
+    <color name="onSurfaceVariant1">#5C5C5C</color>
+
 </resources>
