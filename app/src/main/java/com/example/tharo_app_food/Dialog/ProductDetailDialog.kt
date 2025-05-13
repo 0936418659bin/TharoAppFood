@@ -14,6 +14,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.tharo_app_food.Domain.Category
 import com.example.tharo_app_food.Domain.DeleteRequest
@@ -79,14 +80,14 @@ class ProductDetailDialog : DialogFragment() {
         val inflater = requireActivity().layoutInflater
         binding = DialogFoodDetailBinding.inflate(inflater)
         food = arguments?.getSerializable(ARG_FOOD) as Foods
-        Log.d(TAG, "Received food object: $food")
+        Log.d(TAG, "Nhận dữ liệu món ăn: $food")
 
-        displayFoodData()
+        hienThiDuLieuMonAn()
         setupDropdowns(binding.root)
 
         binding.btnImage.setOnClickListener {
-            Log.d(TAG, "Image picker button clicked")
-            openImagePicker()
+            Log.d(TAG, "Nhấn nút chọn ảnh")
+            moImagePicker()
         }
 
         return MaterialAlertDialogBuilder(requireContext(), R.style.RoundedDialogTheme)
@@ -94,32 +95,93 @@ class ProductDetailDialog : DialogFragment() {
             .setTitle("Chỉnh sửa món ăn")
             .setPositiveButton("Cập nhật", null)
             .setNegativeButton("Hủy") { _, _ ->
-                Log.d(TAG, "Dialog canceled")
+                Log.d(TAG, "Đã hủy hộp thoại")
                 uploadJob?.cancel()
                 dismiss()
             }
+            .setNeutralButton("Xóa") { _, _ ->
+                hienThiXacNhanXoa()
+            }
             .create().also { dialog ->
                 dialog.setOnShowListener {
-                    val button = dialog.getButton(Dialog.BUTTON_POSITIVE)
-                    button.setOnClickListener {
-                        Log.d(TAG, "Update button clicked")
+                    val positiveButton = dialog.getButton(Dialog.BUTTON_POSITIVE)
+                    positiveButton.setOnClickListener {
+                        Log.d(TAG, "Nhấn nút cập nhật")
                         if (uploadJob?.isActive == true) {
-                            Log.d(TAG, "Upload is already in progress")
-                            showToast("Đang tải lên, vui lòng đợi...")
+                            Log.d(TAG, "Đang tải lên, vui lòng đợi...")
+                            hienThiThongBao("Đang tải lên, vui lòng đợi...")
                             return@setOnClickListener
                         }
-                        if (validateInputs(binding.root)) {
-                            Log.d(TAG, "Inputs are valid, starting upload")
-                            uploadImageAndAddProduct(binding.root)
+                        if (kiemTraDuLieuHopLe(binding.root)) {
+                            Log.d(TAG, "Dữ liệu hợp lệ, bắt đầu tải lên")
+                            uploadAnhVaCapNhatMonAn(binding.root)
                         } else {
-                            Log.d(TAG, "Validation failed")
+                            Log.d(TAG, "Dữ liệu không hợp lệ")
                         }
                     }
                 }
             }
     }
 
-    private fun displayFoodData() {
+    private fun hienThiXacNhanXoa() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Xác nhận xóa")
+            .setMessage("Bạn có chắc chắn muốn xóa món ăn ${food.Title}?")
+            .setPositiveButton("Xóa") { _, _ ->
+                xoaMonAn()
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun xoaMonAn() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // 1. Xóa ảnh từ ImageKit trước (nếu có)
+                val oldFileId = layFileIdTuUrl(food.ImagePath)
+                oldFileId?.let { path ->
+                    try {
+                        Log.d(TAG, "Bắt đầu xóa ảnh từ ImageKit với ID: $path")
+                        val deleteResponse = imageKitService.deleteImage(path)
+
+                        if (deleteResponse.isSuccessful) {
+                            deleteResponse.body()?.let {
+                                if (it.success) {
+                                    Log.d(TAG, "Xóa ảnh từ ImageKit thành công")
+                                } else {
+                                    Log.w(TAG, "ImageKit trả về lỗi: ${it.message}")
+                                }
+                            }
+                        } else {
+                            Log.w(TAG, "Lỗi khi xóa ảnh từ ImageKit: ${deleteResponse.errorBody()?.string()}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Lỗi khi gọi API xóa ảnh", e)
+                        // Vẫn tiếp tục xóa dữ liệu Firebase dù xóa ảnh có lỗi
+                    }
+                }
+
+                // 2. Xóa dữ liệu từ Firebase
+                withContext(Dispatchers.Main) {
+                    database.getReference("Foods").child(food.Key).removeValue()
+                        .addOnSuccessListener {
+                            hienThiThongBao("Đã xóa món ăn thành công")
+                            dismiss()
+                        }
+                        .addOnFailureListener { e ->
+                            hienThiThongBao("Lỗi khi xóa dữ liệu: ${e.message}")
+                        }
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    hienThiThongBao("Lỗi hệ thống: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun hienThiDuLieuMonAn() {
         Glide.with(requireContext())
             .load(food.ImagePath)
             .placeholder(R.drawable.add_photo)
@@ -132,10 +194,10 @@ class ProductDetailDialog : DialogFragment() {
         binding.tvFoodDescription.setText(food.Description)
         binding.cbBestFood.isChecked = food.BestFood
 
-        enableEditing()
+        choPhepChinhSua()
     }
 
-    private fun enableEditing() {
+    private fun choPhepChinhSua() {
         binding.tvFoodName.isEnabled = true
         binding.tvFoodPrice.isEnabled = true
         binding.tvFoodRating.isEnabled = true
@@ -145,33 +207,33 @@ class ProductDetailDialog : DialogFragment() {
     }
 
     private fun setupDropdowns(view: View) {
-        loadDropdownData(view.findViewById(R.id.spinnerCategory), "Category", Category::class.java) {
+        taiDuLieuDropdown(view.findViewById(R.id.spinnerCategory), "Category", Category::class.java) {
             selectedCategory = it
         }
 
-        loadDropdownData(view.findViewById(R.id.spinnerPrice), "Price", Price::class.java) {
+        taiDuLieuDropdown(view.findViewById(R.id.spinnerPrice), "Price", Price::class.java) {
             selectedPrice = it
         }
 
-        loadDropdownData(view.findViewById(R.id.spinnerTime), "Time", Time::class.java) {
+        taiDuLieuDropdown(view.findViewById(R.id.spinnerTime), "Time", Time::class.java) {
             selectedTime = it
         }
 
-        loadDropdownData(view.findViewById(R.id.spinnerLocation), "Location", Location::class.java) {
+        taiDuLieuDropdown(view.findViewById(R.id.spinnerLocation), "Location", Location::class.java) {
             selectedLocation = it
         }
     }
 
-    private fun <T : Any> loadDropdownData(
+    private fun <T : Any> taiDuLieuDropdown(
         dropdown: AutoCompleteTextView,
         path: String,
         clazz: Class<T>,
         onSelect: (T) -> Unit
     ) {
-        Log.d(TAG, "Loading dropdown data for $path")
+        Log.d(TAG, "Đang tải dữ liệu dropdown cho $path")
         database.getReference(path).get().addOnSuccessListener { snapshot ->
             val items = snapshot.children.mapNotNull { it.getValue(clazz) }
-            Log.d(TAG, "Loaded $path items: ${items.size}")
+            Log.d(TAG, "Đã tải $path items: ${items.size}")
 
             val currentId = when (path) {
                 "Category" -> food.CategoryId
@@ -191,43 +253,43 @@ class ProductDetailDialog : DialogFragment() {
                 }
             }
 
-            dropdown.setAdapter(createDropdownAdapter(items))
+            dropdown.setAdapter(taoDropdownAdapter(items))
 
             currentItem?.let {
-                dropdown.setText(getItemDisplayText(it), false)
+                dropdown.setText(hienThiTextItem(it), false)
                 onSelect(it)
-                Log.d(TAG, "Set default selection for $path: ${getItemDisplayText(it)}")
+                Log.d(TAG, "Thiết lập lựa chọn mặc định cho $path: ${hienThiTextItem(it)}")
             }
 
             dropdown.setOnItemClickListener { _, _, position, _ ->
                 onSelect(items[position])
-                Log.d(TAG, "Selected $path: ${getItemDisplayText(items[position])}")
+                Log.d(TAG, "Đã chọn $path: ${hienThiTextItem(items[position])}")
             }
         }.addOnFailureListener {
-            Log.e(TAG, "Error loading $path", it)
-            showToast("Lỗi tải dữ liệu $path")
+            Log.e(TAG, "Lỗi khi tải $path", it)
+            hienThiThongBao("Lỗi tải dữ liệu $path")
         }
     }
 
-    private fun <T> createDropdownAdapter(items: List<T>): ArrayAdapter<T> {
+    private fun <T> taoDropdownAdapter(items: List<T>): ArrayAdapter<T> {
         return object : ArrayAdapter<T>(requireContext(), R.layout.item_category_dropdown, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = convertView ?: LayoutInflater.from(context)
                     .inflate(R.layout.item_category_dropdown, parent, false)
-                view.findViewById<TextView>(R.id.categoryName).text = getItemDisplayText(getItem(position))
+                view.findViewById<TextView>(R.id.categoryName).text = hienThiTextItem(getItem(position))
                 return view
             }
 
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = convertView ?: LayoutInflater.from(context)
                     .inflate(R.layout.item_category_dropdown_expanded, parent, false)
-                view.findViewById<TextView>(R.id.categoryName).text = getItemDisplayText(getItem(position))
+                view.findViewById<TextView>(R.id.categoryName).text = hienThiTextItem(getItem(position))
                 return view
             }
         }
     }
 
-    private fun <T> getItemDisplayText(item: T?): String = when (item) {
+    private fun <T> hienThiTextItem(item: T?): String = when (item) {
         is Category -> item.Name
         is Price -> item.Value
         is Time -> item.Value
@@ -235,7 +297,7 @@ class ProductDetailDialog : DialogFragment() {
         else -> ""
     }
 
-    private fun openImagePicker() {
+    private fun moImagePicker() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         startActivityForResult(intent, REQUEST_IMAGE_PICK)
@@ -245,31 +307,31 @@ class ProductDetailDialog : DialogFragment() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_PICK && resultCode == Activity.RESULT_OK && data != null) {
             imageUri = data.data
-            Log.d(TAG, "Image selected: $imageUri")
+            Log.d(TAG, "Đã chọn ảnh: $imageUri")
             binding.ivFoodImage3.setImageURI(imageUri)
         } else {
-            Log.d(TAG, "Image selection canceled or failed")
+            Log.d(TAG, "Hủy chọn ảnh hoặc có lỗi")
         }
     }
 
-    private fun validateInputs(view: View): Boolean {
+    private fun kiemTraDuLieuHopLe(view: View): Boolean {
         if (binding.tvFoodName.text.toString().trim().isEmpty()) {
-            showToast("Vui lòng nhập tên món ăn")
+            hienThiThongBao("Vui lòng nhập tên món ăn")
             return false
         }
         if (binding.tvFoodPrice.text.toString().trim().isEmpty()) {
-            showToast("Vui lòng nhập giá món ăn")
+            hienThiThongBao("Vui lòng nhập giá món ăn")
             return false
         }
         if (selectedCategory == null || selectedPrice == null || selectedTime == null || selectedLocation == null) {
-            showToast("Vui lòng chọn đầy đủ thông tin từ các danh mục")
+            hienThiThongBao("Vui lòng chọn đầy đủ thông tin từ các danh mục")
             return false
         }
         return true
     }
 
-    private fun uploadImageAndAddProduct(view: View) {
-        Log.d(TAG, "Starting uploadImageAndAddProduct()")
+    private fun uploadAnhVaCapNhatMonAn(view: View) {
+        Log.d(TAG, "Bắt đầu uploadAnhVaCapNhatMonAn()")
         val databaseRef = database.getReference("Foods").child(food.Key)
 
         uploadJob = CoroutineScope(Dispatchers.IO).launch {
@@ -287,14 +349,11 @@ class ProductDetailDialog : DialogFragment() {
                     LocationId = selectedLocation?.Id ?: 0
                 )
 
-                // Nếu có ảnh mới, xử lý upload và xóa ảnh cũ
                 imageUri?.let { uri ->
-                    // Lấy filePath từ URL ảnh cũ (nếu có)
-                    val oldFileId = extractFileIdFromUrl(food.ImagePath)
-                    Log.d(TAG, "Old file path to delete: $oldFileId")
+                    val oldFileId = layFileIdTuUrl(food.ImagePath)
+                    Log.d(TAG, "Đường dẫn ảnh cũ cần xóa: $oldFileId")
 
-                    // Upload ảnh mới
-                    Log.d(TAG, "Uploading image from URI: $uri")
+                    Log.d(TAG, "Đang tải ảnh lên từ URI: $uri")
                     val inputStream = requireContext().contentResolver.openInputStream(uri)
                         ?: throw Exception("Không thể mở ảnh")
 
@@ -311,84 +370,82 @@ class ProductDetailDialog : DialogFragment() {
                     val folderPart = "/food_images/".toRequestBody("text/plain".toMediaType())
 
                     try {
-                        // Upload ảnh mới
                         val response = imageKitService.uploadImage(filePart, fileNamePart, folderPart)
-                        Log.d(TAG, "Image uploaded successfully: ${response.url}")
+                        Log.d(TAG, "Tải ảnh lên thành công: ${response.url}")
                         updatedFood.ImagePath = response.url
 
-                        // Xóa ảnh cũ nếu có
                         oldFileId?.let { path ->
                             try {
-                                Log.d(TAG, "Attempting to delete old image with fileid: $path")
-                                val deleteResponse = imageKitService.deleteImage(path) // Truyền trực tiếp String
+                                Log.d(TAG, "Đang thử xóa ảnh cũ với fileid: $path")
+                                val deleteResponse = imageKitService.deleteImage(path)
                                 if (deleteResponse.isSuccessful) {
                                     deleteResponse.body()?.let {
                                         if (it.success) {
-                                            Log.d(TAG, "Old image deleted successfully")
+                                            Log.d(TAG, "Đã xóa ảnh cũ thành công")
                                         } else {
-                                            Log.w(TAG, "Failed to delete old image: ${it.message ?: "No error message"}")
+                                            Log.w(TAG, "Không thể xóa ảnh cũ: ${it.message ?: "Không có thông báo lỗi"}")
                                         }
                                     }
                                 } else {
                                     val errorBody = deleteResponse.errorBody()?.string()
-                                    Log.w(TAG, "Delete API error: ${errorBody ?: "Unknown error"}")
+                                    Log.w(TAG, "Lỗi API xóa: ${errorBody ?: "Lỗi không xác định"}")
                                 }
                             } catch (e: Exception) {
-                                Log.e(TAG, "Error deleting old image", e)
+                                Log.e(TAG, "Lỗi khi xóa ảnh cũ", e)
                                 withContext(Dispatchers.Main) {
-                                    showToast("Warning: Could not delete old image but new image was updated")
+                                    hienThiThongBao("Cảnh báo: Không thể xóa ảnh cũ nhưng ảnh mới đã được cập nhật")
                                 }
                             }
                         }
                     } catch (uploadEx: Exception) {
-                        Log.e(TAG, "Image upload failed", uploadEx)
+                        Log.e(TAG, "Tải ảnh lên thất bại", uploadEx)
                         throw uploadEx
                     } finally {
                         tempFile.delete()
-                        Log.d(TAG, "Temp file deleted")
+                        Log.d(TAG, "Đã xóa file tạm")
                     }
                 }
 
                 withContext(Dispatchers.Main) {
                     databaseRef.setValue(updatedFood).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            Log.d(TAG, "Food updated in database successfully")
-                            showToast("Cập nhật món ăn thành công")
+                            Log.d(TAG, "Đã cập nhật món ăn trong database thành công")
+                            hienThiThongBao("Cập nhật món ăn thành công")
                             dismiss()
                         } else {
-                            Log.e(TAG, "Database update failed", task.exception)
-                            showToast("Cập nhật thất bại: ${task.exception?.message}")
+                            Log.e(TAG, "Cập nhật database thất bại", task.exception)
+                            hienThiThongBao("Cập nhật thất bại: ${task.exception?.message}")
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error during uploadImageAndAddProduct()", e)
+                Log.e(TAG, "Lỗi trong uploadAnhVaCapNhatMonAn()", e)
                 withContext(Dispatchers.Main) {
-                    showToast("Lỗi: ${e.message}")
+                    hienThiThongBao("Lỗi: ${e.message}")
                 }
             }
         }
     }
 
-    // Thay hàm extractFilePathFromUrl bằng hàm này
-    private fun extractFileIdFromUrl(imageUrl: String?): String? {
+    private fun layFileIdTuUrl(imageUrl: String?): String? {
         if (imageUrl.isNullOrEmpty()) return null
         try {
-            // URL có dạng: https://ik.imagekit.io/yourID/folder/filename.jpg?ik-s=123abc
             val uri = Uri.parse(imageUrl)
             val pathSegments = uri.pathSegments
             if (pathSegments.size >= 2) {
                 val fileName = pathSegments.last()
-                // Trả về phần tên file không bao gồm extension
                 return fileName.substringBeforeLast('.')
             }
             return null
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing image URL", e)
+            Log.e(TAG, "Lỗi phân tích URL ảnh", e)
             return null
         }
     }
-    private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+
+    private fun hienThiThongBao(message: String) {
+        if (isAdded) { // Kiểm tra Fragment còn gắn với Activity không
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
 }
