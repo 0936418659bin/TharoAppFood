@@ -64,7 +64,7 @@ class ProductDetailDialog : DialogFragment() {
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.56.1:3000/") // Server node.js của bạn
+            .baseUrl("http://192.168.1.6:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -285,10 +285,14 @@ class ProductDetailDialog : DialogFragment() {
                     TimeId = selectedTime?.Id ?: 0,
                     LocationId = selectedLocation?.Id ?: 0
                 )
-                Log.d(TAG, "Updated food: $updatedFood")
 
-                // Nếu có ảnh mới, upload lên ImageKit
+                // Nếu có ảnh mới, xử lý upload và xóa ảnh cũ
                 imageUri?.let { uri ->
+                    // Lấy filePath từ URL ảnh cũ (nếu có)
+                    val oldFilePath = extractFilePathFromUrl(food.ImagePath)
+                    Log.d(TAG, "Old file path to delete: $oldFilePath")
+
+                    // Upload ảnh mới
                     Log.d(TAG, "Uploading image from URI: $uri")
                     val inputStream = requireContext().contentResolver.openInputStream(uri)
                         ?: throw Exception("Không thể mở ảnh")
@@ -306,9 +310,28 @@ class ProductDetailDialog : DialogFragment() {
                     val folderPart = "/food_images/".toRequestBody("text/plain".toMediaType())
 
                     try {
+                        // Upload ảnh mới
                         val response = imageKitService.uploadImage(filePart, fileNamePart, folderPart)
                         Log.d(TAG, "Image uploaded successfully: ${response.url}")
                         updatedFood.ImagePath = response.url
+
+                        // Xóa ảnh cũ nếu có
+                        oldFilePath?.let { path ->
+                            try {
+                                Log.d(TAG, "Attempting to delete old image with path: $path")
+                                val deleteResponse = imageKitService.deleteImage(path)
+                                if (deleteResponse.success) {
+                                    Log.d(TAG, "Old image deleted successfully: $path")
+                                } else {
+                                    Log.w(TAG, "Failed to delete old image: $path")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error deleting old image", e)
+                                withContext(Dispatchers.Main) {
+                                    showToast("Lỗi khi xóa ảnh cũ, nhưng ảnh mới đã được cập nhật")
+                                }
+                            }
+                        }
                     } catch (uploadEx: Exception) {
                         Log.e(TAG, "Image upload failed", uploadEx)
                         throw uploadEx
@@ -336,6 +359,29 @@ class ProductDetailDialog : DialogFragment() {
                     showToast("Lỗi: ${e.message}")
                 }
             }
+        }
+    }
+
+    private fun extractFilePathFromUrl(imageUrl: String?): String? {
+        if (imageUrl.isNullOrEmpty()) return null
+
+        // URL ImageKit có dạng: https://ik.imagekit.io/your_imagekit_id/rest_of_path.jpg
+        // Hoặc: https://ik.imagekit.io/your_imagekit_id/rest_of_path.jpg?tr=params...
+
+        try {
+            val uri = Uri.parse(imageUrl)
+            val pathSegments = uri.pathSegments
+
+            if (pathSegments.size < 2) return null
+
+            // Bỏ phần imagekit_id (phần đầu tiên)
+            val filePath = pathSegments.drop(1).joinToString("/")
+
+            // Loại bỏ query parameters nếu có
+            return filePath.substringBefore("?")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing image URL", e)
+            return null
         }
     }
 
