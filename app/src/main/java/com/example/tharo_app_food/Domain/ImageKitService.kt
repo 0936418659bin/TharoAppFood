@@ -3,6 +3,7 @@ package com.example.tharo_app_food.Domain
 import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -23,10 +24,10 @@ interface ImageKitService {
     ): UploadResponse
 
     @FormUrlEncoded
-    @POST("delete")
+    @POST("api/delete")
     suspend fun deleteImage(
         @Field("fileId") fileId: String
-    ): DeleteResponse
+    ): Response<DeleteResponse>
 }
 
 data class AuthRequest(val userId: String)
@@ -38,14 +39,23 @@ data class AuthResponse(
 
 data class UploadResponse(
     val url: String,
-    val fileId: String,
+    val fileId: String,  // Đảm bảo có trường này để lưu fileId từ server
     val width: Int,
     val height: Int
 )
 
-data class DeleteResponse(
-    @SerializedName("success") val success: Boolean
+data class DeleteRequest(
+    @SerializedName("fileId")
+    val fileId: String
 )
+
+data class DeleteResponse(
+    @SerializedName("success")
+    val success: Boolean,
+    @SerializedName("message")
+    val message: String? = null
+)
+
 
 sealed class ApiResult<T> {
     data class Success<T>(val data: T) : ApiResult<T>()

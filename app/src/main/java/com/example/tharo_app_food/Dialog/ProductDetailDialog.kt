@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
 import com.example.tharo_app_food.Domain.Category
+import com.example.tharo_app_food.Domain.DeleteRequest
 import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.Domain.ImageKitService
 import com.example.tharo_app_food.Domain.Location
@@ -64,7 +65,7 @@ class ProductDetailDialog : DialogFragment() {
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.6:3000/")
+            .baseUrl("http://192.168.1.15:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -289,8 +290,8 @@ class ProductDetailDialog : DialogFragment() {
                 // Nếu có ảnh mới, xử lý upload và xóa ảnh cũ
                 imageUri?.let { uri ->
                     // Lấy filePath từ URL ảnh cũ (nếu có)
-                    val oldFilePath = extractFilePathFromUrl(food.ImagePath)
-                    Log.d(TAG, "Old file path to delete: $oldFilePath")
+                    val oldFileId = extractFileIdFromUrl(food.ImagePath)
+                    Log.d(TAG, "Old file path to delete: $oldFileId")
 
                     // Upload ảnh mới
                     Log.d(TAG, "Uploading image from URI: $uri")
@@ -316,19 +317,26 @@ class ProductDetailDialog : DialogFragment() {
                         updatedFood.ImagePath = response.url
 
                         // Xóa ảnh cũ nếu có
-                        oldFilePath?.let { path ->
+                        oldFileId?.let { path ->
                             try {
-                                Log.d(TAG, "Attempting to delete old image with path: $path")
-                                val deleteResponse = imageKitService.deleteImage(path)
-                                if (deleteResponse.success) {
-                                    Log.d(TAG, "Old image deleted successfully: $path")
+                                Log.d(TAG, "Attempting to delete old image with fileid: $path")
+                                val deleteResponse = imageKitService.deleteImage(path) // Truyền trực tiếp String
+                                if (deleteResponse.isSuccessful) {
+                                    deleteResponse.body()?.let {
+                                        if (it.success) {
+                                            Log.d(TAG, "Old image deleted successfully")
+                                        } else {
+                                            Log.w(TAG, "Failed to delete old image: ${it.message ?: "No error message"}")
+                                        }
+                                    }
                                 } else {
-                                    Log.w(TAG, "Failed to delete old image: $path")
+                                    val errorBody = deleteResponse.errorBody()?.string()
+                                    Log.w(TAG, "Delete API error: ${errorBody ?: "Unknown error"}")
                                 }
                             } catch (e: Exception) {
                                 Log.e(TAG, "Error deleting old image", e)
                                 withContext(Dispatchers.Main) {
-                                    showToast("Lỗi khi xóa ảnh cũ, nhưng ảnh mới đã được cập nhật")
+                                    showToast("Warning: Could not delete old image but new image was updated")
                                 }
                             }
                         }
@@ -362,29 +370,24 @@ class ProductDetailDialog : DialogFragment() {
         }
     }
 
-    private fun extractFilePathFromUrl(imageUrl: String?): String? {
+    // Thay hàm extractFilePathFromUrl bằng hàm này
+    private fun extractFileIdFromUrl(imageUrl: String?): String? {
         if (imageUrl.isNullOrEmpty()) return null
-
-        // URL ImageKit có dạng: https://ik.imagekit.io/your_imagekit_id/rest_of_path.jpg
-        // Hoặc: https://ik.imagekit.io/your_imagekit_id/rest_of_path.jpg?tr=params...
-
         try {
+            // URL có dạng: https://ik.imagekit.io/yourID/folder/filename.jpg?ik-s=123abc
             val uri = Uri.parse(imageUrl)
             val pathSegments = uri.pathSegments
-
-            if (pathSegments.size < 2) return null
-
-            // Bỏ phần imagekit_id (phần đầu tiên)
-            val filePath = pathSegments.drop(1).joinToString("/")
-
-            // Loại bỏ query parameters nếu có
-            return filePath.substringBefore("?")
+            if (pathSegments.size >= 2) {
+                val fileName = pathSegments.last()
+                // Trả về phần tên file không bao gồm extension
+                return fileName.substringBeforeLast('.')
+            }
+            return null
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing image URL", e)
             return null
         }
     }
-
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
