@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.tharo_app_food.Fragment.CategoryFragment
 import com.example.tharo_app_food.Fragment.ProductFragment
+import com.example.tharo_app_food.Fragment.SettingFragment
 import com.example.tharo_app_food.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -42,7 +43,7 @@ class AdminActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_settings -> {
-//                    loadFragment(SettingsFragment())
+                    loadFragment(SettingFragment())
                     true
                 }
                 else -> false
