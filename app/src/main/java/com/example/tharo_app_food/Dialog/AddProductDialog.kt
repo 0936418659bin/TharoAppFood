@@ -31,8 +31,6 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.MutableData
-import com.google.firebase.database.Transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -85,7 +83,7 @@ class AddProductDialog : DialogFragment() {
 
     private val imageKitService by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.15:3000/")
+            .baseUrl("http://192.168.1.4:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ImageKitService::class.java)
@@ -247,27 +245,40 @@ class AddProductDialog : DialogFragment() {
     }
 
     private fun validateInputs(view: View): Boolean {
+        val nameInput = view.findViewById<TextInputEditText>(R.id.etFoodName).text?.toString()?.trim()
+        val priceInput = view.findViewById<TextInputEditText>(R.id.etPrice).text?.toString()?.trim()
+
         return when {
-            !::selectedImageUri.isInitialized -> showToast("Vui lòng chọn ảnh").let { false }
-            selectedCategory.Id == 0 -> showToast("Vui lòng chọn danh mục").let { false }
-            view.findViewById<TextInputEditText>(R.id.etFoodName).text.isNullOrEmpty() -> {
-                Log.e(TAG, "Tên món ăn chưa được nhập")
-                showToast("Vui lòng nhập tên món ăn").let { false }
+            !::selectedImageUri.isInitialized -> {
+                Log.e(TAG, "Chưa chọn ảnh")
+                showToast("Vui lòng chọn ảnh")
+                false
             }
-            view.findViewById<TextInputEditText>(R.id.etPrice).text.isNullOrEmpty() -> {
+            selectedCategory.Id == -1 -> { // Giả định -1 là "chưa chọn"
+                Log.e(TAG, "Danh mục chưa được chọn")
+                showToast("Vui lòng chọn danh mục")
+                false
+            }
+            nameInput.isNullOrEmpty() -> {
+                Log.e(TAG, "Tên món ăn chưa được nhập")
+                showToast("Vui lòng nhập tên món ăn")
+                false
+            }
+            priceInput.isNullOrEmpty() -> {
                 Log.e(TAG, "Giá món ăn chưa được nhập")
-                showToast("Vui lòng nhập giá").let { false }
+                showToast("Vui lòng nhập giá")
+                false
             }
             else -> true
         }
     }
+
 
     private fun showToast(message: String) {
         activity?.runOnUiThread {
             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
         }
     }
-
     private fun uploadImageAndAddProduct(view: View) {
         progressDialog = ProgressDialog(requireContext()).apply {
             setMessage("Đang tải lên...")
@@ -277,15 +288,16 @@ class AddProductDialog : DialogFragment() {
 
         uploadJob = requireActivity().lifecycleScope.launch {
             try {
-
                 cleanDuplicateProducts()
 
-                val imageUrl = uploadImage() ?: throw Exception("Lỗi upload ảnh")
-                val food = createFood(view, imageUrl)
+                // Nhận cả URL và ImageId từ hàm upload
+                val (imageUrl, imageId) = uploadImage() ?: throw Exception("Lỗi upload ảnh")
 
-                // Thêm bước validate title
-                if (food.Title.isBlank() || food.Title.any { it.isWhitespace() }) {
-                    throw Exception("Tiêu đề không được để trống hoặc chứa khoảng trắng")
+                // Tạo đối tượng food với cả imageUrl và imageId
+                val food = createFood(view, imageUrl, imageId)
+
+                if (food.Title.isBlank()) {
+                    throw Exception("Tên món ăn không được để trống")
                 }
 
                 saveFood(food)
@@ -305,52 +317,51 @@ class AddProductDialog : DialogFragment() {
             }
         }
     }
-
-    private suspend fun uploadImage(): String? = withContext(Dispatchers.IO) {
+    private suspend fun uploadImage(): Pair<String, String>? = withContext(Dispatchers.IO) {
         var tempFile: File? = null
         try {
-            Log.e("AddProductDialog", "Đang tạo file tạm từ Uri: $selectedImageUri")
-            val inputStream = activity?.contentResolver?.openInputStream(selectedImageUri)
-                ?: return@withContext null
-
-            tempFile = File.createTempFile(
-                "food_${System.currentTimeMillis()}",
-                ".jpg",
-                activity?.cacheDir
-            ).apply {
-                outputStream().use { output ->
-                    inputStream.copyTo(output)
+            val resolver = activity?.contentResolver ?: return@withContext null
+            val inputStream = resolver.openInputStream(selectedImageUri)
+                ?: return@withContext null.also {
+                    Log.e(TAG, "Không thể mở InputStream từ Uri")
                 }
+
+            // Tạo file tạm từ Uri
+            val fileName = "food_${System.currentTimeMillis()}.jpg"
+            tempFile = File.createTempFile("temp_", ".jpg", activity?.cacheDir)
+            tempFile.outputStream().use { output -> inputStream.copyTo(output) }
+
+            Log.d(TAG, "File tạm được tạo: ${tempFile.absolutePath}")
+
+            // Tạo request multipart
+            val requestBody = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val filePart = MultipartBody.Part.createFormData("file", fileName, requestBody)
+            val fileNamePart = fileName.toRequestBody("text/plain".toMediaTypeOrNull())
+            val folderPart = "food_images".toRequestBody("text/plain".toMediaTypeOrNull()) // thư mục lưu trên ImageKit
+
+            // Gọi API upload
+            val uploadResponse = imageKitService.uploadImage(
+                file = filePart,
+                fileName = fileNamePart,
+                folder = folderPart
+            )
+
+            if (uploadResponse.url.isBlank() || uploadResponse.fileId.isBlank()) {
+                Log.e(TAG, "Upload thành công nhưng URL hoặc fileId rỗng")
+                return@withContext null
             }
 
-            Log.e("AddProductDialog", "Tạo file tạm thành công: ${tempFile.absolutePath}")
+            Log.d(TAG, "Upload thành công. URL: ${uploadResponse.url}, FileId: ${uploadResponse.fileId}")
+            return@withContext Pair(uploadResponse.url, uploadResponse.fileId)
 
-            val filePart = MultipartBody.Part.createFormData(
-                "file",
-                tempFile.name,
-                tempFile.asRequestBody("image/*".toMediaTypeOrNull())
-            )
-
-            val response = imageKitService.uploadImage(
-                filePart,
-                "food_${System.currentTimeMillis()}.jpg".toRequestBody("text/plain".toMediaTypeOrNull()),
-                "/food_images/".toRequestBody("text/plain".toMediaTypeOrNull())
-            )
-
-            Log.e("AddProductDialog", "Phản hồi upload ảnh: ${response.url}")
-            return@withContext response.url
         } catch (e: Exception) {
-            Log.e("AddProductDialog", "Lỗi upload ảnh: ${e.message}", e)
-            if (isAdded && !isDetached) {
-                withContext(Dispatchers.Main) {
-                    showToast("Lỗi upload ảnh: ${e.message}")
-                }
-            }
+            Log.e(TAG, "Lỗi trong quá trình upload", e)
             return@withContext null
         } finally {
             tempFile?.delete()
         }
     }
+
 
     suspend fun cleanDuplicateProducts() = withContext(Dispatchers.IO) {
         try {
@@ -372,11 +383,12 @@ class AddProductDialog : DialogFragment() {
     }
 
 
-    private fun createFood(view: View, imageUrl: String): Foods = Foods().apply {
+    private fun createFood(view: View, imageUrl: String, imageId: String): Foods = Foods().apply {
         Title = view.findViewById<TextInputEditText>(R.id.etFoodName).text.toString()
         Description = view.findViewById<TextInputEditText>(R.id.etDescription).text.toString()
         Price = view.findViewById<TextInputEditText>(R.id.etPrice).text.toString().toDoubleOrNull() ?: 0.0
         ImagePath = imageUrl
+        ImageId = imageId // Lưu ID ảnh từ ImageKit
         Star = view.findViewById<TextInputEditText>(R.id.etRating).text.toString().toDoubleOrNull() ?: 0.0
         TimeValue = view.findViewById<TextInputEditText>(R.id.etTime).text.toString().toIntOrNull() ?: 0
         BestFood = view.findViewById<MaterialCheckBox>(R.id.cbBestFood).isChecked
@@ -384,7 +396,6 @@ class AddProductDialog : DialogFragment() {
         LocationId = selectedLocation.Id
         PriceId = selectedPrice.Id
         TimeId = selectedTime.Id
-
     }
 
     private fun setupDuplicateCleaner() {

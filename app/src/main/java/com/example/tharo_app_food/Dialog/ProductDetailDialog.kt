@@ -66,7 +66,7 @@ class ProductDetailDialog : DialogFragment() {
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.15:3000/")
+            .baseUrl("http://192.168.1.4:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -137,12 +137,12 @@ class ProductDetailDialog : DialogFragment() {
     private fun xoaMonAn() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // 1. Xóa ảnh từ ImageKit trước (nếu có)
-                val oldFileId = layFileIdTuUrl(food.ImagePath)
-                oldFileId?.let { path ->
+                // 1. Xóa ảnh từ ImageKit trước (nếu có ImageId)
+                if (food.ImageId.isNotEmpty()) {
                     try {
-                        Log.d(TAG, "Bắt đầu xóa ảnh từ ImageKit với ID: $path")
-                        val deleteResponse = imageKitService.deleteImage(path)
+                        Log.d(TAG, "Bắt đầu xóa ảnh từ ImageKit với ID: ${food.ImageId}")
+                        val deleteRequest = DeleteRequest(fileId = food.ImageId)
+                        val deleteResponse = imageKitService.deleteImage(deleteRequest)
 
                         if (deleteResponse.isSuccessful) {
                             deleteResponse.body()?.let {
@@ -350,9 +350,6 @@ class ProductDetailDialog : DialogFragment() {
                 )
 
                 imageUri?.let { uri ->
-                    val oldFileId = layFileIdTuUrl(food.ImagePath)
-                    Log.d(TAG, "Đường dẫn ảnh cũ cần xóa: $oldFileId")
-
                     Log.d(TAG, "Đang tải ảnh lên từ URI: $uri")
                     val inputStream = requireContext().contentResolver.openInputStream(uri)
                         ?: throw Exception("Không thể mở ảnh")
@@ -370,14 +367,21 @@ class ProductDetailDialog : DialogFragment() {
                     val folderPart = "/food_images/".toRequestBody("text/plain".toMediaType())
 
                     try {
+                        // Upload new image
                         val response = imageKitService.uploadImage(filePart, fileNamePart, folderPart)
                         Log.d(TAG, "Tải ảnh lên thành công: ${response.url}")
-                        updatedFood.ImagePath = response.url
 
-                        oldFileId?.let { path ->
+                        // Update the food with new image info
+                        val newFood = updatedFood.copy(
+                            ImagePath = response.url,
+                            ImageId = response.fileId
+                        )
+
+                        // Delete old image if exists
+                        if (food.ImageId.isNotEmpty()) {
                             try {
-                                Log.d(TAG, "Đang thử xóa ảnh cũ với fileid: $path")
-                                val deleteResponse = imageKitService.deleteImage(path)
+                                Log.d(TAG, "Đang thử xóa ảnh cũ với fileid: ${food.ImageId}")
+                                val deleteResponse = imageKitService.deleteImage(DeleteRequest(fileId = food.ImageId))
                                 if (deleteResponse.isSuccessful) {
                                     deleteResponse.body()?.let {
                                         if (it.success) {
@@ -397,6 +401,20 @@ class ProductDetailDialog : DialogFragment() {
                                 }
                             }
                         }
+
+                        // Update database with new food data
+                        withContext(Dispatchers.Main) {
+                            databaseRef.setValue(newFood).addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Log.d(TAG, "Đã cập nhật món ăn trong database thành công")
+                                    hienThiThongBao("Cập nhật món ăn thành công")
+                                    dismiss()
+                                } else {
+                                    Log.e(TAG, "Cập nhật database thất bại", task.exception)
+                                    hienThiThongBao("Cập nhật thất bại: ${task.exception?.message}")
+                                }
+                            }
+                        }
                     } catch (uploadEx: Exception) {
                         Log.e(TAG, "Tải ảnh lên thất bại", uploadEx)
                         throw uploadEx
@@ -404,17 +422,18 @@ class ProductDetailDialog : DialogFragment() {
                         tempFile.delete()
                         Log.d(TAG, "Đã xóa file tạm")
                     }
-                }
-
-                withContext(Dispatchers.Main) {
-                    databaseRef.setValue(updatedFood).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Log.d(TAG, "Đã cập nhật món ăn trong database thành công")
-                            hienThiThongBao("Cập nhật món ăn thành công")
-                            dismiss()
-                        } else {
-                            Log.e(TAG, "Cập nhật database thất bại", task.exception)
-                            hienThiThongBao("Cập nhật thất bại: ${task.exception?.message}")
+                } ?: run {
+                    // No new image selected, just update other fields
+                    withContext(Dispatchers.Main) {
+                        databaseRef.setValue(updatedFood).addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Log.d(TAG, "Đã cập nhật món ăn (không có ảnh mới) thành công")
+                                hienThiThongBao("Cập nhật món ăn thành công")
+                                dismiss()
+                            } else {
+                                Log.e(TAG, "Cập nhật database thất bại", task.exception)
+                                hienThiThongBao("Cập nhật thất bại: ${task.exception?.message}")
+                            }
                         }
                     }
                 }
@@ -427,24 +446,8 @@ class ProductDetailDialog : DialogFragment() {
         }
     }
 
-    private fun layFileIdTuUrl(imageUrl: String?): String? {
-        if (imageUrl.isNullOrEmpty()) return null
-        try {
-            val uri = Uri.parse(imageUrl)
-            val pathSegments = uri.pathSegments
-            if (pathSegments.size >= 2) {
-                val fileName = pathSegments.last()
-                return fileName.substringBeforeLast('.')
-            }
-            return null
-        } catch (e: Exception) {
-            Log.e(TAG, "Lỗi phân tích URL ảnh", e)
-            return null
-        }
-    }
-
     private fun hienThiThongBao(message: String) {
-        if (isAdded) { // Kiểm tra Fragment còn gắn với Activity không
+        if (isAdded) {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
     }

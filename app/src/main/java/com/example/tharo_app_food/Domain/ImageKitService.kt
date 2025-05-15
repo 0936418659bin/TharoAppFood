@@ -15,18 +15,20 @@ interface ImageKitService {
     @POST("api/auth")
     suspend fun getAuthParams(@Body request: AuthRequest): AuthResponse
 
-    @POST("api/upload")
+
     @Multipart
+    @POST("api/upload")
     suspend fun uploadImage(
         @Part file: MultipartBody.Part,
         @Part("fileName") fileName: RequestBody,
         @Part("folder") folder: RequestBody
     ): UploadResponse
 
-    @FormUrlEncoded
+
+
     @POST("api/delete")
     suspend fun deleteImage(
-        @Field("fileId") fileId: String
+        @Body request: DeleteRequest
     ): Response<DeleteResponse>
 }
 

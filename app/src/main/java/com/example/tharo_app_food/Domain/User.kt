@@ -9,7 +9,8 @@ data class User(
     var Email: String = "",
     var Role: String = "User",
     var Avatar: String = "",
+    var AvatarId: String = "",
      // Thay bằng List
 ) {
-    constructor() : this(0, "", "", "User", "")
+    constructor() : this(0, "", "", "User", "","")
 }

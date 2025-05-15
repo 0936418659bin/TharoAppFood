@@ -14,8 +14,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.tharo_app_food.Adapter.CategoryAdapter
 import com.example.tharo_app_food.Adapter.UserAdapter
 import com.example.tharo_app_food.Config.GridSpacingItemDecoration
+import com.example.tharo_app_food.Dialog.AddCategoryDialog
+import com.example.tharo_app_food.Dialog.AddProductDialog
 import com.example.tharo_app_food.Domain.Category
+import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.R
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.search.SearchBar
 import com.google.firebase.database.*
 import com.google.android.material.search.SearchView
@@ -27,6 +31,7 @@ class CategoryFragment : Fragment() {
     private lateinit var searchBar: SearchBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var categoryAdapter: UserAdapter
+    private lateinit var fabAddProduct: ExtendedFloatingActionButton
     private lateinit var database: FirebaseDatabase
     private lateinit var categoriesRef: DatabaseReference
     private lateinit var searchView: SearchView
@@ -52,6 +57,7 @@ class CategoryFragment : Fragment() {
         searchBar = view.findViewById(R.id.searchBar)
         searchView = view.findViewById(R.id.searchView)
         recyclerView = view.findViewById(R.id.cateListView)
+        fabAddProduct = view.findViewById(R.id.AddCategory)
 
         // Setup RecyclerView
         setupRecyclerView()
@@ -61,6 +67,8 @@ class CategoryFragment : Fragment() {
 
         // Load data from Firebase
         loadCategories()
+
+        setupFab()
     }
 
     private fun setupRecyclerView() {
@@ -84,6 +92,31 @@ class CategoryFragment : Fragment() {
                 )
             )
         }
+    }
+
+    private fun setupFab() {
+        fabAddProduct.setOnClickListener {
+            showAddProductDialog()
+        }
+    }
+
+    private fun showAddProductDialog() {
+        AddCategoryDialog().apply {
+            setOnProductAddedListener { newCate ->
+                addFoodToFirebase(newCate)
+            }
+        }.show(parentFragmentManager, "AddCategoryDialog")
+    }
+
+    private fun addFoodToFirebase(cate: Category) {
+        val foodKey = cate.generateKey()
+        categoriesRef.child(foodKey).setValue(cate)
+            .addOnSuccessListener {
+                Toast.makeText(requireContext(), "Thêm sản phẩm thành công", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Lỗi khi thêm sản phẩm", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun setupSearch() {

@@ -18,10 +18,12 @@ data class Foods(
     var TimeValue: Int = 0,
     var Title: String = "",
     var numberInChart: Int = 0,
-    var Key: String = ""
+    var Key: String = "",
+    var ImageId: String = "",
+
 ) : Serializable {
     // Constructor không tham số để Firebase có thể deserialize object
-    constructor() : this(0, "", false, 0, 0, 0.0, "", 0, 0.0, 0, 0, "", 0, "")
+    constructor() : this(0, "", false, 0, 0, 0.0, "", 0, 0.0, 0, 0, "", 0, "","")
 
     override fun toString(): String {
         return Title.ifEmpty { "Unknown Location" }
