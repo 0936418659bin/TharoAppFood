@@ -102,7 +102,7 @@
                 android:id="@+id/timeTxt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Time"
+                android:text="Thời Gian"
                 android:textColor="@color/white"
                 tools:textColor="@color/black"
                 app:layout_constraintBottom_toBottomOf="@+id/starTxt"

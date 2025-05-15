@@ -94,7 +94,7 @@
                         android:layout_weight="1"
                         android:background="#00ffffff"
                         android:ems="10"
-                        android:hint="Search Food..."
+                        android:hint="Tìm Kiếm Món Ăn..."
                         android:inputType="text"
                         android:textAlignment="center"
                         android:textColor="@color/black"
@@ -226,7 +226,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Today's best Foods"
+                    android:text="Món Hot Hôm Nay"
                     android:textColor="@color/white"
                     android:textStyle="bold"
                     android:textSize="22sp"/>
@@ -235,8 +235,8 @@
                     android:id="@+id/textView2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:text="VIEW ALL" />
+                    android:textColor="@color/white"
+                    android:text="Xem tất cả" />
             </LinearLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -277,7 +277,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Choose Category"
+                    android:text="Chọn Danh Mục"
                     android:textColor="@color/white"
                     android:textSize="22sp"
                     android:textStyle="bold" />

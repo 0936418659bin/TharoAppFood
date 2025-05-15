@@ -4,9 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
->
-
+    android:layout_margin="8dp">
 
     <LinearLayout
         android:id="@+id/cat1Btn"
@@ -20,25 +18,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/blurView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/imgCate"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:layout_gravity="center"
-            android:background="@drawable/blur_background"
-            app:blurOverlayColor="#20000000">
-
-            <ImageView
-                android:id="@+id/imgCate"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_gravity="center"
-                android:padding="12dp"
-                app:srcCompat="@drawable/btn_1"
-                tools:tint="@color/black"
-                app:tint="@color/white"/>
-
-        </eightbitlab.com.blurview.BlurView>
+            android:padding="12dp"
+            app:srcCompat="@drawable/btn_1"
+            tools:tint="@color/black"
+            app:tint="@null"/>
 
         <TextView
             android:id="@+id/titleCatTxt"

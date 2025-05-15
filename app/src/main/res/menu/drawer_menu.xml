@@ -4,23 +4,23 @@
         <item
             android:id="@+id/nav_profile"
             android:icon="@drawable/user"
-            android:title="Profile"
+            android:title="Trang Cá Nhân"
             />
         <item
             android:id="@+id/nav_orders"
             android:icon="@drawable/orders"
-            android:title="My Orders" />
+            android:title="Giỏ Hàng Của Tôi" />
         <item
             android:id="@+id/nav_favorites"
             android:icon="@drawable/fa"
-            android:title="Favorites" />
+            android:title="Món Ăn Yêu Thích" />
         <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/setting"
-            android:title="Settings" />
+            android:title="Cài Đặt" />
         <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/logout1"
-            android:title="Logout" />
+            android:title="Đăng Xuất" />
     </group>
 </menu>

@@ -25,18 +25,27 @@ class UserAdapter(
         private val itemCountTextView: MaterialTextView = itemView.findViewById(R.id.tvItemCount)
 
         fun bind(category: Category) {
-            // Load image using Glide or your preferred image loading library
             val context = itemView.context
-            val resId = context.resources.getIdentifier(category.ImagePath, "drawable", context.packageName)
-            if (resId != 0) {
+
+            if (category.ImagePath.startsWith("http")) {
+                // Trường hợp ảnh là URL từ ImageKit
                 Glide.with(context)
-                    .load(resId)
+                    .load(category.ImagePath)
                     .placeholder(R.drawable.default_user)
                     .into(imageView)
             } else {
-                Glide.with(context)
-                    .load(R.drawable.default_user)
-                    .into(imageView)
+                // Trường hợp ảnh là tên trong drawable
+                val resId = context.resources.getIdentifier(category.ImagePath, "drawable", context.packageName)
+                if (resId != 0) {
+                    Glide.with(context)
+                        .load(resId)
+                        .placeholder(R.drawable.default_user)
+                        .into(imageView)
+                } else {
+                    Glide.with(context)
+                        .load(R.drawable.default_user)
+                        .into(imageView)
+                }
             }
 
             nameTextView.text = category.Name
@@ -44,7 +53,6 @@ class UserAdapter(
             productCountTextView.text = "$productCount sản phẩm"
             itemCountTextView.text = productCount.toString()
 
-            // Set click listener
             cardView.setOnClickListener {
                 onItemClick(category)
             }

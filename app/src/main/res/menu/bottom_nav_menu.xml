@@ -3,17 +3,17 @@
     <item
         android:id="@+id/nav_dashboard"
         android:icon="@drawable/ic_dashboard"
-        android:title="Dashboard" />
+        android:title="Tổng Quan" />
     <item
         android:id="@+id/products"
-        android:icon="@drawable/box"
-        android:title="Statistics" />
+        android:icon="@drawable/fast_food"
+        android:title="Món Ăn" />
     <item
         android:id="@+id/nav_users"
-        android:icon="@drawable/user"
-        android:title="Users" />
+        android:icon="@drawable/category"
+        android:title="Danh Mục" />
     <item
         android:id="@+id/nav_settings"
         android:icon="@drawable/setting"
-        android:title="Settings" />
+        android:title="Cài Đặt" />
 </menu>

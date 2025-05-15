@@ -241,8 +241,17 @@ class AddCategoryDialog : DialogFragment() {
     private suspend fun saveFood(cate: Category) = withContext(Dispatchers.IO) {
         val nextId = getNextFoodId()
         cate.Id = nextId
+
+        // Tạo map dữ liệu với tên trường chính xác
+        val categoryData = mapOf(
+            "Id" to cate.Id,
+            "Name" to cate.Name,
+            "ImagePath" to cate.ImagePath,
+            "ImageId" to cate.ImageId
+        )
+
         // Lưu cả thông tin ảnh bao gồm ImageId
-        database.getReference("Category").child(nextId.toString()).setValue(cate).await()
+        database.getReference("Category").child(nextId.toString()).setValue(categoryData).await()
         Log.d(TAG, "Đã lưu danh mục với ID: ${cate.Id}")
         deleteDuplicateImmediately(cate.Name, nextId.toString())
     }
@@ -272,17 +281,18 @@ class AddCategoryDialog : DialogFragment() {
             val snapshot = database.getReference("Category").get().await()
 
             snapshot.children.forEach { child ->
-                val title = child.child("Name").getValue(String::class.java)
+                // Thay đổi từ "Name" sang "name" để phù hợp với cách Firebase lưu trữ
+                val name = child.child("name").getValue(String::class.java)
                 val key = child.key
 
                 // Kiểm tra null và điều kiện
-                if (title != null && key != null && key == title && !key.matches(Regex("\\d+"))) {
+                if (name != null && key != null && key == name && !key.matches(Regex("\\d+"))) {
                     child.ref.removeValue().await()
-                    Log.d(TAG, "Đã xóa sản phẩm trùng lặp: $key")
+                    Log.d(TAG, "Đã xóa danh mục trùng lặp: $key")
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Lỗi khi dọn dẹp sản phẩm trùng lặp", e)
+            Log.e(TAG, "Lỗi khi dọn dẹp danh mục trùng lặp", e)
         }
     }
 
@@ -299,10 +309,11 @@ class AddCategoryDialog : DialogFragment() {
     }
 
     private suspend fun checkAndCleanDuplicate(snapshot: DataSnapshot) {
-        val title = snapshot.child("Name").getValue(String::class.java)
+        // Thay đổi từ "Name" sang "name" để phù hợp với cách Firebase lưu trữ
+        val name = snapshot.child("name").getValue(String::class.java)
         val key = snapshot.key
 
-        if (title != null && key != null && key == title && !key.matches(Regex("\\d+"))) {
+        if (name != null && key != null && key == name && !key.matches(Regex("\\d+"))) {
             // Đây là bản trùng lặp, cần xóa
             try {
                 // Kiểm tra xem đã có bản gốc chưa
