@@ -49,7 +49,7 @@ import java.io.File
 class AddProductDialog : DialogFragment() {
     private var listener: ((Foods) -> Unit)? = null
     private lateinit var selectedImageUri: Uri
-    private var selectedCategory = Category(0, "", "")
+    private var selectedCategory = Category(0, "", "","")
     private var selectedPrice = Price(0, "")
     private var selectedTime = Time(0, "")
     private var selectedLocation = Location(0, "")
@@ -383,21 +383,22 @@ class AddProductDialog : DialogFragment() {
     }
 
 
-    private fun createFood(view: View, imageUrl: String, imageId: String): Foods = Foods().apply {
-        Title = view.findViewById<TextInputEditText>(R.id.etFoodName).text.toString()
-        Description = view.findViewById<TextInputEditText>(R.id.etDescription).text.toString()
-        Price = view.findViewById<TextInputEditText>(R.id.etPrice).text.toString().toDoubleOrNull() ?: 0.0
-        ImagePath = imageUrl
-        ImageId = imageId // Lưu ID ảnh từ ImageKit
-        Star = view.findViewById<TextInputEditText>(R.id.etRating).text.toString().toDoubleOrNull() ?: 0.0
-        TimeValue = view.findViewById<TextInputEditText>(R.id.etTime).text.toString().toIntOrNull() ?: 0
-        BestFood = view.findViewById<MaterialCheckBox>(R.id.cbBestFood).isChecked
-        CategoryId = selectedCategory.Id
-        LocationId = selectedLocation.Id
-        PriceId = selectedPrice.Id
-        TimeId = selectedTime.Id
+    private fun createFood(view: View, imageUrl: String, imageId: String): Foods {
+        return Foods().apply {
+            Title = view.findViewById<TextInputEditText>(R.id.etFoodName).text.toString()
+            Description = view.findViewById<TextInputEditText>(R.id.etDescription).text.toString()
+            Price = view.findViewById<TextInputEditText>(R.id.etPrice).text.toString().toDoubleOrNull() ?: 0.0
+            ImagePath = imageUrl
+            ImageId = imageId
+            Star = view.findViewById<TextInputEditText>(R.id.etRating).text.toString().toDoubleOrNull() ?: 0.0
+            TimeValue = view.findViewById<TextInputEditText>(R.id.etTime).text.toString().toIntOrNull() ?: 0
+            BestFood = view.findViewById<MaterialCheckBox>(R.id.cbBestFood).isChecked
+            CategoryId = selectedCategory.Id
+            LocationId = selectedLocation.Id
+            PriceId = selectedPrice.Id
+            TimeId = selectedTime.Id
+        }
     }
-
     private fun setupDuplicateCleaner() {
         database.getReference("Foods").addChildEventListener(object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -454,17 +455,32 @@ class AddProductDialog : DialogFragment() {
 
     private suspend fun saveFood(food: Foods) = withContext(Dispatchers.IO) {
         try {
-            // Bước 1: Lấy ID tiếp theo
             val nextId = getNextFoodId()
             food.Id = nextId
+            food.Key = nextId.toString() // Đảm bảo trường Key cũng được viết hoa
 
-            // Bước 2: Lưu sản phẩm mới
-            database.getReference("Foods").child(nextId.toString()).setValue(food).await()
+            // Tạo map dữ liệu với tên trường viết hoa
+            val foodData = mapOf(
+                "Id" to food.Id,
+                "Title" to food.Title,
+                "Description" to food.Description,
+                "Price" to food.Price,
+                "ImagePath" to food.ImagePath,
+                "ImageId" to food.ImageId,
+                "Star" to food.Star,
+                "TimeValue" to food.TimeValue,
+                "BestFood" to food.BestFood,
+                "CategoryId" to food.CategoryId,
+                "LocationId" to food.LocationId,
+                "PriceId" to food.PriceId,
+                "TimeId" to food.TimeId,
+                "Key" to food.Key
+            )
+
+            database.getReference("Foods").child(nextId.toString()).setValue(foodData).await()
             Log.d(TAG, "Đã lưu sản phẩm với ID: ${food.Id}")
 
-            // Bước 3: Xóa ngay lập tức sản phẩm trùng lặp (nếu có)
             deleteDuplicateImmediately(food.Title, nextId.toString())
-
         } catch (e: Exception) {
             Log.e(TAG, "Lỗi khi lưu sản phẩm", e)
             throw e

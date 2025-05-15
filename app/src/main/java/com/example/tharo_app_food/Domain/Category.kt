@@ -1,15 +1,16 @@
 package com.example.tharo_app_food.Domain
 
 import com.google.firebase.database.IgnoreExtraProperties
+import com.google.firebase.database.PropertyName
 
 @IgnoreExtraProperties
 data class Category(
-    var Id: Int = 0,
-    var ImagePath: String = "",
-    var Name: String = "",
-    var ImageId: String = "",
+    @PropertyName("Id") var Id: Int,
+    @PropertyName("Name") var Name: String,
+    @PropertyName("ImagePath") var ImagePath: String,
+    @PropertyName("ImageId") var ImageId: String
 ) {
-    constructor() : this(0, " ","", "")
+    constructor() : this(0, "", "", "")
 
     override fun toString(): String {
         return Name

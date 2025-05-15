@@ -135,7 +135,7 @@ class CartActivity : BaseActivity() {
         managementCart.getListCart { list ->
             val percentTax = 0.02
             val delivery = 10.0
-            val subtotal = list.sumOf { it.Price * it.numberInChart }
+            val subtotal = list.sumOf { it.Price * it.numberInChart.toDouble() }
             val tax = subtotal * percentTax
             val total = subtotal + tax + delivery
 

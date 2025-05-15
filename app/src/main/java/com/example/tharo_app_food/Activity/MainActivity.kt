@@ -131,7 +131,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.15:3000/") // Thay bằng URL server Node.js
+            .baseUrl("http://192.168.1.4:3000/") // Thay bằng URL server Node.js
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -145,7 +145,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
     private fun handleSelectedImage(uri: Uri) {
-        // Hiển thị ảnh đã chọn tạm thời
         val navView: NavigationView = findViewById(R.id.nav_view)
         val headerView = navView.getHeaderView(0)
         val imgAvatar = headerView.findViewById<ImageView>(R.id.img_avatar)
@@ -155,30 +154,41 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             .circleCrop()
             .into(imgAvatar)
 
-        // Ẩn nút thêm avatar tạm thời
         val btnAddAvatar = headerView.findViewById<ImageButton>(R.id.btn_add_avatar)
         btnAddAvatar.visibility = View.GONE
 
-        // Bắt đầu quá trình thay đổi avatar
         changeUserAvatar(uri)
     }
 
     private fun changeUserAvatar(newAvatarUri: Uri) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
 
-        // Lấy thông tin user để kiểm tra có avatar cũ không
         FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
             .getReference("Users").child(currentUser.uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val user = snapshot.getValue(User::class.java)
-                    user?.AvatarId?.let { oldImageId ->
-                        // Nếu có avatar cũ, xóa nó trước
-                        deleteOldAvatar(oldImageId) {
-                            // Sau khi xóa xong, upload avatar mới
-                            uploadImageToImageKit(newAvatarUri)
+                    // Kiểm tra cả Avatar và ImageId (thống nhất tên trường)
+                    val oldAvatarUrl = user?.Avatar
+                    val oldImageId = user?.AvatarId
+
+                    if (!oldAvatarUrl.isNullOrEmpty() && !oldImageId.isNullOrEmpty()) {
+                        // Nếu có avatar cũ, xóa nó trước khi upload mới
+                        deleteOldAvatar(oldImageId) { isSuccess ->
+                            if (isSuccess) {
+                                uploadImageToImageKit(newAvatarUri)
+                            } else {
+                                runOnUiThread {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Failed to delete old avatar, but will continue with new upload",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    uploadImageToImageKit(newAvatarUri)
+                                }
+                            }
                         }
-                    } ?: run {
+                    } else {
                         // Nếu không có avatar cũ, upload luôn
                         uploadImageToImageKit(newAvatarUri)
                     }
@@ -191,21 +201,24 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             })
     }
 
-    private fun deleteOldAvatar(imageId: String, onComplete: () -> Unit) {
+    private fun deleteOldAvatar(imageId: String, callback: (Boolean) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val deleteResponse = imageKitService.deleteImage(DeleteRequest(imageId))
                 if (deleteResponse.isSuccessful) {
-                    Log.d("DeleteImage", "Deleted old avatar successfully")
-                } else {
-                    Log.e("DeleteImage", "Failed to delete old avatar: ${deleteResponse.message()}")
+                    deleteResponse.body()?.let {
+                        if (it.success) {
+                            Log.d("DeleteImage", "Deleted old avatar successfully")
+                            callback(true)
+                            return@launch
+                        }
+                    }
                 }
+                Log.e("DeleteImage", "Failed to delete old avatar: ${deleteResponse.errorBody()?.string()}")
+                callback(false)
             } catch (e: Exception) {
                 Log.e("DeleteImage", "Error deleting old avatar", e)
-            } finally {
-                withContext(Dispatchers.Main) {
-                    onComplete()
-                }
+                callback(false)
             }
         }
     }
@@ -245,13 +258,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             return
         }
 
-        Log.d("UploadImage", "Starting image upload for user: ${currentUser.uid}")
-
         try {
             contentResolver.openInputStream(uri)?.use { inputStream ->
-                Log.d("UploadImage", "Opened input stream for URI: $uri")
-
-                // Tạo file tạm thời để upload
                 val tempFile = File.createTempFile(
                     "avatar_${currentUser.uid}_${System.currentTimeMillis()}",
                     ".jpg",
@@ -262,9 +270,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                     }
                 }
 
-                Log.d("UploadImage", "Created temp file: ${tempFile.absolutePath}")
-
-                // Tạo request body cho file
                 val fileRequestBody = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
                 val filePart = MultipartBody.Part.createFormData(
                     "file",
@@ -272,29 +277,27 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                     fileRequestBody
                 )
 
-                // Tạo request body cho các tham số khác
                 val fileNamePart = "avatar_${currentUser.uid}_${System.currentTimeMillis()}.jpg"
                     .toRequestBody("text/plain".toMediaType())
                 val folderPart = "/user_avatars/"
                     .toRequestBody("text/plain".toMediaType())
 
-                Log.d("UploadImage", "Prepared all multipart parts")
-
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        Log.d("UploadImage", "Calling imageKitService.uploadImage...")
-
                         val response = imageKitService.uploadImage(
                             file = filePart,
                             fileName = fileNamePart,
                             folder = folderPart
                         )
 
-                        Log.d("UploadImage", "Upload successful. Image URL: ${response.url}, File ID: ${response.fileId}")
-
                         withContext(Dispatchers.Main) {
+                            // Cập nhật cả Avatar và ImageId
+                            saveAvatarInfoToDatabase(
+                                userId = currentUser.uid,
+                                imageUrl = response.url,
+                                fileId = response.fileId
+                            )
                             updateAvatarUI(response.url)
-                            saveAvatarInfoToDatabase(currentUser.uid, response.url, response.fileId)
                             Toast.makeText(
                                 this@MainActivity,
                                 "Avatar updated successfully",
@@ -302,42 +305,23 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                             ).show()
                         }
                     } catch (e: Exception) {
-                        Log.e("UploadImage", "Upload failed", e)
-
-                        val errorMessage = when (e) {
-                            is HttpException -> {
-                                val errorBody = e.response()?.errorBody()?.string()
-                                "Server error: ${e.code()}, $errorBody"
-                            }
-                            is IOException -> "Network error: ${e.message}"
-                            else -> "Error: ${e.message}"
-                        }
-
                         withContext(Dispatchers.Main) {
+                            showAddAvatarButton()
                             Toast.makeText(
                                 this@MainActivity,
-                                "Failed to upload avatar: $errorMessage",
+                                "Failed to upload avatar: ${e.message}",
                                 Toast.LENGTH_LONG
                             ).show()
-                            showAddAvatarButton()
                         }
                     } finally {
-                        // Xóa file tạm dù thành công hay thất bại
-                        try {
-                            tempFile.delete()
-                            Log.d("UploadImage", "Deleted temp file: ${tempFile.absolutePath}")
-                        } catch (e: Exception) {
-                            Log.e("UploadImage", "Error deleting temp file", e)
-                        }
+                        tempFile.delete()
                     }
                 }
             } ?: run {
-                Log.e("UploadImage", "InputStream is null for URI: $uri")
                 Toast.makeText(this, "Failed to read image data", Toast.LENGTH_SHORT).show()
                 showAddAvatarButton()
             }
         } catch (e: Exception) {
-            Log.e("UploadImage", "Error in upload process", e)
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             showAddAvatarButton()
         }
@@ -366,26 +350,19 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val userRef = FirebaseDatabase.getInstance("https://tharo-app-default-rtdb.europe-west1.firebasedatabase.app/")
             .getReference("Users").child(userId)
 
-        // Tạo map chứa cả URL và ID của ảnh
-        val updates = mapOf(
+        // Cập nhật cả Avatar và ImageId cùng lúc
+        val updates = hashMapOf<String, Any>(
             "Avatar" to imageUrl,
-            "ImageId" to fileId
+            "AvatarId" to fileId
         )
 
         userRef.updateChildren(updates)
             .addOnSuccessListener {
-                Toast.makeText(this, "Avatar updated successfully", Toast.LENGTH_SHORT).show()
-
-                // Ẩn nút thêm avatar sau khi upload thành công
-                runOnUiThread {
-                    val navView: NavigationView = findViewById(R.id.nav_view)
-                    val headerView = navView.getHeaderView(0)
-                    val btnAddAvatar = headerView.findViewById<ImageButton>(R.id.btn_add_avatar)
-                    btnAddAvatar.visibility = View.GONE
-                }
+                Log.d("SaveAvatar", "Avatar info updated successfully")
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to save avatar: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.e("SaveAvatar", "Failed to save avatar info", e)
+                Toast.makeText(this, "Failed to save avatar info", Toast.LENGTH_SHORT).show()
             }
     }
 
