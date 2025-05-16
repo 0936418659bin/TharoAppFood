@@ -16,7 +16,6 @@ class PaymentQrActivity: AppCompatActivity() {
     private lateinit var tvAmount: TextView
     private lateinit var back_btn: MaterialToolbar
 
-
     private val decimalFormat: DecimalFormat by lazy {
         val formatSymbols = DecimalFormatSymbols(Locale.US).apply {
             groupingSeparator = '.'

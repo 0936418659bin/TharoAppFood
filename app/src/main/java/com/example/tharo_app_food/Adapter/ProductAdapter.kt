@@ -30,7 +30,7 @@ class ProductAdapter(
                 .into(imageView)
 
             nameTextView.text = food.Title
-            priceTextView.text = "$${food.Price}"
+            priceTextView.text = "%,.3fđ".format(food.Price)
             ratingTextView.text = "⭐ ${food.Star}"
             timeTextView.text = "${food.TimeValue} phút"
 

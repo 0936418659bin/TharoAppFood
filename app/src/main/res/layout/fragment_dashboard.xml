@@ -18,10 +18,25 @@
             android:orientation="horizontal"
             android:paddingBottom="16dp">
 
-            <ImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@drawable/default_user" />
+            <RelativeLayout
+                android:layout_width="72dp"
+                android:layout_height="72dp">
+
+                <ImageView
+                    android:id="@+id/user_avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/default_user"/>
+
+                <ImageButton
+                    android:id="@+id/btn_add_avatar"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentBottom="true"
+                    android:background="@drawable/add_circle"
+                    android:visibility="visible" />
+            </RelativeLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -37,6 +52,7 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/name_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Admin"
@@ -76,10 +92,11 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/total_users_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="1,234"
+                        android:text="0"
                         android:textColor="@color/white"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -108,6 +125,7 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/total_products_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"

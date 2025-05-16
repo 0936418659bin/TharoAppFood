@@ -154,6 +154,7 @@ class LoginActivity : AppCompatActivity() {
             putString("user_name", user.UserName)
             putString("user_role", user.Role)
             putString("user_email", user.Email)
+            putString("user_image", user.Avatar)
             apply()
         }
 
