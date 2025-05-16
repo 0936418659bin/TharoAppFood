@@ -52,9 +52,10 @@ class DetailActivity : BaseActivity() {
             .into(binding.pic)
 
         binding.titleTxt.text = foodObject.Title
-        binding.priceTxt.text = "$${foodObject.Price}"
+        binding.priceTxt.text = "%,.3fđ".format(foodObject.Price)
         binding.descriptionTxt.text = foodObject.Description
-        binding.ratingTxt.text = "${foodObject.Star} Rating"
+        binding.timeTxt.text = "${foodObject.TimeValue} phút"
+        binding.ratingTxt.text = "${foodObject.Star} Đánh giá"
         binding.ratingBar.rating = foodObject.Star.toFloat()
         updateTotalPrice()
 
@@ -137,7 +138,7 @@ class DetailActivity : BaseActivity() {
     }
 
     private fun updateTotalPrice() {
-        binding.totalTxt.text = "$${"%.2f".format(quantity * foodObject.Price)}"
+        binding.totalTxt.text = "${"%.3fđ".format(quantity * foodObject.Price)}"
     }
 
     override fun onDestroy() {

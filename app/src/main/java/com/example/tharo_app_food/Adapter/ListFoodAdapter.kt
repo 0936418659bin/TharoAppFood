@@ -31,9 +31,9 @@ class ListFoodAdapter(private val context: Context, private val items: ArrayList
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
         holder.titleTxt.text = items[position].Title
-        holder.priceTxt.text = "$${items[position].TimeValue}"
+        holder.priceTxt.text = "%,.3fđ".format(items[position].Price)
         holder.starTxt.text = "${items[position].Star}"
-        holder.timeTxt.text = "${items[position].TimeValue} min"
+        holder.timeTxt.text = "${items[position].TimeValue} Phút"
 
         var radius: Float = 10f
         var decorView: View = (holder.itemView.context as Activity).window.decorView

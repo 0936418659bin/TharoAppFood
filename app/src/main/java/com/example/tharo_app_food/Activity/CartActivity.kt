@@ -20,13 +20,26 @@ import com.example.tharo_app_food.R
 import com.example.tharo_app_food.databinding.ActivityCartBinding
 import com.google.firebase.auth.FirebaseAuth
 import eightbitlab.com.blurview.RenderScriptBlur
-import java.text.NumberFormat
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 class CartActivity : BaseActivity() {
     private lateinit var binding: ActivityCartBinding
     private lateinit var adapter: CartAdapter
     private lateinit var managementCart: ManagementCart
+
+    // Định dạng số với 3 chữ số thập phân và dấu . ngăn cách hàng nghìn
+    private val decimalFormat: DecimalFormat by lazy {
+        val formatSymbols = DecimalFormatSymbols(Locale.US).apply {
+            groupingSeparator = '.'
+            decimalSeparator = '.'
+        }
+        DecimalFormat("#,##0.###", formatSymbols).apply {
+            minimumFractionDigits = 3
+            maximumFractionDigits = 3
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,17 +64,13 @@ class CartActivity : BaseActivity() {
         })
         binding.cartView.adapter = adapter
 
-        // Tính toán chiều cao dựa trên số lượng item
-        val itemHeight = resources.getDimensionPixelSize(R.dimen.cart_item_height) // 150dp
-        val maxHeight = itemHeight * 3 // Giới hạn tối đa 3 items
-
-        // Đặt chiều cao cho RecyclerView
+        val itemHeight = resources.getDimensionPixelSize(R.dimen.cart_item_height)
+        val maxHeight = itemHeight * 3
         binding.cartView.layoutParams.height = if (list.size > 3) maxHeight else ViewGroup.LayoutParams.WRAP_CONTENT
-        binding.cartView.requestLayout() // Yêu cầu vẽ lại layout
+        binding.cartView.requestLayout()
     }
 
     private fun showLoginRequiredDialog() {
-        // Sử dụng AlertDialog.Builder của AndroidX
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Yêu cầu đăng nhập")
             .setMessage("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng")
@@ -78,13 +87,10 @@ class CartActivity : BaseActivity() {
     }
 
     private fun navigateToMain() {
-        // Thay thế bằng Intent đến màn hình đăng nhập của bạn
         finish()
     }
 
-
     private fun navigateToLogin() {
-        // Thay thế bằng Intent đến màn hình đăng nhập của bạn
         val intent = Intent(this, LoginActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -96,17 +102,21 @@ class CartActivity : BaseActivity() {
         binding.backBtn.setOnClickListener { finish() }
 
         binding.btnPayment.setOnClickListener {
-            // Lấy tổng tiền từ TextView (đã tính trong calculateCart())
-            val totalAmount = binding.totalTxt.text.toString().replace("[^\\d.]".toRegex(), "") // "$10.00" (định dạng từ calculateCart)
+            managementCart.getListCart { list ->
+                val subtotal = list.sumOf { it.Price * it.numberInChart.toDouble() }
+                val percentTax = 0.02
+                val delivery = 10.0
+                val tax = subtotal * percentTax
+                val total = subtotal + tax + delivery
 
-            // Chuyển sang PaymentActivity và truyền tổng tiền
-            val intent = Intent(this, PaymentActivity::class.java).apply {
-                putExtra("TOTAL_AMOUNT", totalAmount)
+                // Gửi giá trị số thay vì chuỗi đã định dạng
+                val intent = Intent(this, PaymentActivity::class.java).apply {
+                    putExtra("TOTAL_AMOUNT", total)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
 
-        // Khởi tạo RecyclerView
         binding.cartView.layoutManager = LinearLayoutManager(this)
         adapter = CartAdapter(arrayListOf(), this, object : ChangeNumberItemsListener {
             override fun change() {
@@ -139,12 +149,11 @@ class CartActivity : BaseActivity() {
             val tax = subtotal * percentTax
             val total = subtotal + tax + delivery
 
-            val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-
-            binding.totalFeeTxt.text = currencyFormatter.format(subtotal)
-            binding.taxTxt.text = currencyFormatter.format(tax)
-            binding.delivery.text = currencyFormatter.format(delivery)
-            binding.totalTxt.text = currencyFormatter.format(total)
+            // Áp dụng định dạng số với 3 chữ số thập phân
+            binding.totalFeeTxt.text = "${decimalFormat.format(subtotal)}đ"
+            binding.taxTxt.text = "${decimalFormat.format(tax)}đ"
+            binding.delivery.text = "${decimalFormat.format(delivery)}đ"
+            binding.totalTxt.text = "${decimalFormat.format(total)}đ"
         }
     }
 }

@@ -19,6 +19,7 @@ import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.R
 import eightbitlab.com.blurview.BlurView
 import eightbitlab.com.blurview.RenderScriptBlur
+import java.text.DecimalFormat
 import kotlin.collections.ArrayList
 
 class BestFoodAdapter(val items: ArrayList<Foods>) : RecyclerView.Adapter<BestFoodAdapter.ViewHolder>() {
@@ -33,9 +34,9 @@ class BestFoodAdapter(val items: ArrayList<Foods>) : RecyclerView.Adapter<BestFo
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.titleTxt.text = items[position].Title
-        holder.priceTxt.text = "$${items[position].TimeValue}"
+        holder.priceTxt.text = "%,.3fđ".format(items[position].Price)
         holder.starTxt.text = "${items[position].Star}"
-        holder.timeTxt.text = "${items[position].TimeValue} min"
+        holder.timeTxt.text = "${items[position].TimeValue} phút"
 
         var radius: Float = 10f
         var decorView: View = (holder.itemView.context as Activity).window.decorView

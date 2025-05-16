@@ -131,7 +131,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.4:3000/") // Thay bằng URL server Node.js
+            .baseUrl("http://192.168.1.15:3000/") // Thay bằng URL server Node.js
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

@@ -19,7 +19,8 @@ import com.example.tharo_app_food.Helper.ManagementCart
 import com.example.tharo_app_food.R
 import eightbitlab.com.blurview.BlurView
 import eightbitlab.com.blurview.RenderScriptBlur
-import java.text.NumberFormat
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 class CartAdapter(
@@ -29,6 +30,16 @@ class CartAdapter(
 ) : RecyclerView.Adapter<CartAdapter.ViewHolder>() {
 
     private val managementCart = ManagementCart(context)
+    private val decimalFormat: DecimalFormat by lazy {
+        val formatSymbols = DecimalFormatSymbols(Locale.US).apply {
+            groupingSeparator = '.'
+            decimalSeparator = '.'
+        }
+        DecimalFormat("#,##0.##", formatSymbols).apply {
+            minimumFractionDigits = 3
+            maximumFractionDigits = 3
+        }
+    }
 
     fun updateList(newList: ArrayList<Foods>) {
         listItemSelected = newList
@@ -49,11 +60,11 @@ class CartAdapter(
             .load(item.ImagePath)
             .into(holder.pic)
 
-        val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-
         holder.title.text = item.Title
-        holder.feeEachItem.text = currencyFormatter.format(item.Price)
-        holder.totalEachItem.text = "${item.numberInChart} x ${currencyFormatter.format(item.Price)}"
+
+        // Định dạng tiền Việt Nam: dấu . ngăn cách hàng nghìn, dấu , cho phần thập phân
+        holder.feeEachItem.text = "${decimalFormat.format(item.Price * item.numberInChart)}đ"
+        holder.totalEachItem.text = "${item.numberInChart} x ${decimalFormat.format(item.Price)}đ"
         holder.num.text = item.numberInChart.toString()
 
         // Xử lý tăng số lượng

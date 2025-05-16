@@ -11,13 +11,13 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.radiobutton.MaterialRadioButton
 import com.google.android.material.snackbar.Snackbar
-import java.text.NumberFormat
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 class PaymentActivity : AppCompatActivity() {
 
     private lateinit var tvTotalAmount: TextView
-
     private lateinit var btnPay: MaterialButton
     private lateinit var radioMomo: MaterialRadioButton
     private lateinit var radioVNPay: MaterialRadioButton
@@ -25,32 +25,43 @@ class PaymentActivity : AppCompatActivity() {
     private lateinit var radioGroupPayment: RadioGroup
     private lateinit var back_btn: ImageButton
 
+    // Định dạng số với dấu . ngăn cách hàng nghìn và dấu , cho phần thập phân
+    private val decimalFormat: DecimalFormat by lazy {
+        val formatSymbols = DecimalFormatSymbols(Locale.US).apply {
+            groupingSeparator = '.'
+            decimalSeparator = '.'
+        }
+        DecimalFormat("#,##0.###", formatSymbols).apply {
+            minimumFractionDigits = 3
+            maximumFractionDigits = 3
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_payment)
 
-        btnPay = findViewById(R.id.btnPay)
+        initViews()
+        setupPaymentMethods()
+        handleBackButton()
 
+        // Nhận và hiển thị tổng tiền
+        val totalAmount = intent.getDoubleExtra("TOTAL_AMOUNT",0.0) ?: "0"
+        tvTotalAmount.text = "${decimalFormat.format(totalAmount)}đ"
+    }
 
-        // Init views
+    private fun initViews() {
         btnPay = findViewById(R.id.btnPay)
         radioMomo = findViewById(R.id.radioMomo)
         radioVNPay = findViewById(R.id.radioVNPay)
         radioCredit = findViewById(R.id.radioCredit)
         tvTotalAmount = findViewById(R.id.tvTotalAmount)
         back_btn = findViewById(R.id.btnBack)
+        radioGroupPayment = findViewById(R.id.radioGroupPayment)
+    }
 
-        val totalAmount = intent.getStringExtra("TOTAL_AMOUNT") ?: "0 VND"
-
-        tvTotalAmount.text = formatCurrency(totalAmount)
-
-        // Payment method selection
-        val paymentCards = listOf(
-            findViewById<MaterialCardView>(R.id.cardMomo),
-            findViewById<MaterialCardView>(R.id.cardVNPay),
-            findViewById<MaterialCardView>(R.id.cardCredit)
-        )
-
+    private fun setupPaymentMethods() {
+        // Thiết lập radio buttons
         radioMomo.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 radioVNPay.isChecked = false
@@ -72,61 +83,46 @@ class PaymentActivity : AppCompatActivity() {
             }
         }
 
-
-        // Pay button click
+        // Xử lý thanh toán
         btnPay.setOnClickListener {
-            val selectedId = radioGroupPayment.checkedRadioButtonId
-            if (selectedId == -1) {
-                Toast.makeText(this, "Vui lòng chọn phương thức thanh toán", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            when (selectedId) {
+            when (radioGroupPayment.checkedRadioButtonId) {
                 R.id.radioMomo -> processMomoPayment()
                 R.id.radioVNPay -> processVNPayPayment()
                 R.id.radioCredit -> processCreditCardPayment()
+                else -> Toast.makeText(
+                    this,
+                    "Vui lòng chọn phương thức thanh toán",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-        }
-        backBtn()
-    }
-
-    private fun formatCurrency(amount: String): String {
-        return try {
-            // Loại bỏ tất cả ký tự không phải số hoặc dấu chấm
-            val cleanAmount = amount.replace("[^\\d.]".toRegex(), "")
-
-            // Kiểm tra nếu chuỗi rỗng
-            if (cleanAmount.isEmpty()) return "0 VND"
-
-            // Chuyển đổi sang Double
-            val numericValue = cleanAmount.toDouble()
-
-            // Format thành VND (ví dụ: 10.0 -> 240.000 VND)
-            val vndAmount = (numericValue * 24000).toInt()
-            "%,d VND".format(vndAmount).replace(",", ".")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            "0 VND" // Trả về giá trị mặc định nếu có lỗi
         }
     }
 
     private fun processMomoPayment() {
-        // TODO: Integrate Momo SDK
+        // TODO: Tích hợp Momo SDK
+        showPaymentSuccess("Thanh toán qua Momo thành công")
     }
 
     private fun processVNPayPayment() {
-        // TODO: Integrate VNPay API
+        // TODO: Tích hợp VNPay API
+        showPaymentSuccess("Thanh toán qua VNPay thành công")
     }
 
     private fun processCreditCardPayment() {
-        // TODO: Integrate Stripe/VNPay Card
+        // TODO: Tích hợp thẻ tín dụng
+        showPaymentSuccess("Thanh toán thẻ tín dụng thành công")
+    }
+
+    private fun showPaymentSuccess(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        finish() // Quay lại màn hình trước sau khi thanh toán
     }
 
     private fun showError(message: String) {
         Snackbar.make(btnPay, message, Snackbar.LENGTH_SHORT).show()
     }
 
-    private fun backBtn() {
-        back_btn.setOnClickListener{finish()}
+    private fun handleBackButton() {
+        back_btn.setOnClickListener { finish() }
     }
 }
