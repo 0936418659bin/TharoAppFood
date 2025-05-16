@@ -23,47 +23,45 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Card Header - ConstraintTop_toBottomOf nút back -->
+        <!-- Card Header -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:cardBackgroundColor="?attr/colorPrimaryContainer"
-        app:cardElevation="4dp"
-        app:strokeColor="@color/white"
-        app:strokeWidth="1dp"
-        app:cornerRadius="12dp">
+            app:layout_constraintTop_toBottomOf="@id/btnBack"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer"
+            app:cardElevation="4dp"
+            app:strokeColor="@color/white"
+            app:strokeWidth="1dp"
+            app:cornerRadius="12dp">
 
-        <!-- Nội dung card giữ nguyên -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Tổng thanh toán"
-                android:textColor="?attr/colorOnPrimaryContainer"
-                android:textSize="14sp" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/tvTotalAmount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="5.000.000 VND"
-                android:textColor="?attr/colorOnPrimaryContainer"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp" />
-            <!-- ... -->
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tổng thanh toán"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvTotalAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5.000.000 VND"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Payment Methods -->
         <TextView
@@ -78,142 +76,141 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cardHeader" />
 
-        <!-- Momo -->
+        <!-- RadioGroup chứa toàn bộ các phương thức thanh toán -->
         <RadioGroup
             android:id="@+id/radioGroupPayment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/tvPaymentMethods"
             android:orientation="vertical">
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardMomo"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            app:layout_constraintTop_toBottomOf="@id/tvPaymentMethods"
-            app:cardBackgroundColor="?attr/colorSurface"
-            app:cardElevation="2dp"
-            app:strokeColor="@color/purple_200"
-            app:strokeWidth="1dp"
-            app:cornerRadius="8dp">
 
-            <LinearLayout
+            <!-- Momo -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardMomo"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
+                android:layout_height="70dp"
+                android:layout_marginBottom="8dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/purple_200"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/momo" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ví Momo"
-                    android:textSize="16sp"
-                    android:layout_marginStart="16dp" />
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/momo" />
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ví Momo"
+                        android:textSize="16sp"
+                        android:layout_marginStart="16dp" />
 
-                <RadioButton
-                    android:id="@+id/radioMomo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
 
-        <!-- VNPay -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardVNPay"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            app:layout_constraintTop_toBottomOf="@id/cardMomo"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="?attr/colorSurface"
-            app:cardElevation="2dp"
-            app:strokeColor="@color/blue_500"
-            app:strokeWidth="1dp"
-            app:cornerRadius="8dp">
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/radioMomo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
+            <!-- VNPay -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardVNPay"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
+                android:layout_height="70dp"
+                android:layout_marginBottom="8dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/blue_500"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/logo_vnpay" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VNPay"
-                    android:textSize="16sp"
-                    android:layout_marginStart="16dp" />
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/logo_vnpay" />
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="VNPay"
+                        android:textSize="16sp"
+                        android:layout_marginStart="16dp" />
 
-                <RadioButton
-                    android:id="@+id/radioVNPay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
 
-        <!-- Credit Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardCredit"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            app:layout_constraintTop_toBottomOf="@id/cardVNPay"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="?attr/colorSurface"
-            app:cardElevation="2dp"
-            app:strokeColor="@color/teal_200"
-            app:strokeWidth="1dp"
-            app:cornerRadius="8dp">
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/radioVNPay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
+            <!-- Credit Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardCredit"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
+                android:layout_height="70dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/teal_200"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp">
 
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/atm_card" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Thẻ ngân hàng"
-                    android:textSize="16sp"
-                    android:layout_marginStart="16dp" />
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/atm_card" />
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thẻ ngân hàng"
+                        android:textSize="16sp"
+                        android:layout_marginStart="16dp" />
 
-                <RadioButton
-                    android:id="@+id/radioCredit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/radioCredit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </RadioGroup>
 
         <!-- Pay Button -->
@@ -229,8 +226,6 @@
             app:cornerRadius="12dp"
             app:iconGravity="textStart"
             app:iconTint="@color/white"
-            app:layout_constraintTop_toBottomOf="@+id/radioGroupPayment"
-            tools:layout_editor_absoluteX="16dp" />
-
+            app:layout_constraintTop_toBottomOf="@+id/radioGroupPayment" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

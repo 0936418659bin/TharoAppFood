@@ -23,6 +23,9 @@
             android:name=".Activity.AdminActivity"
             android:exported="false" />
         <activity
+            android:name=".Activity.PaymentQrActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activity.PaymentActivity"
             android:exported="false" />
         <activity

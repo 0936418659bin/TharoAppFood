@@ -72,4 +72,14 @@
 
     <color name="divider_color">#1F000000</color>
 
+    <color name="cardBackground">#FFF5F5F5</color>
+
+    <color name="lightGray">#FFE0E0E0</color>
+
+    <color name="textSecondary">#5E5E5E</color>
+
+    <color name="primaryDark">#3A56D5</color>
+
+    <color name="dividerColor">#EEEEEE</color>
+
 </resources>

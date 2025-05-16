@@ -1,5 +1,6 @@
 package com.example.tharo_app_food.Activity
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.RadioGroup
@@ -48,6 +49,7 @@ class PaymentActivity : AppCompatActivity() {
         // Nhận và hiển thị tổng tiền
         val totalAmount = intent.getDoubleExtra("TOTAL_AMOUNT",0.0) ?: "0"
         tvTotalAmount.text = "${decimalFormat.format(totalAmount)}đ"
+
     }
 
     private fun initViews() {
@@ -85,10 +87,10 @@ class PaymentActivity : AppCompatActivity() {
 
         // Xử lý thanh toán
         btnPay.setOnClickListener {
-            when (radioGroupPayment.checkedRadioButtonId) {
-                R.id.radioMomo -> processMomoPayment()
-                R.id.radioVNPay -> processVNPayPayment()
-                R.id.radioCredit -> processCreditCardPayment()
+            when {
+                radioMomo.isChecked -> processMomoPayment()
+                radioVNPay.isChecked -> processVNPayPayment()
+                radioCredit.isChecked -> processCreditCardPayment()
                 else -> Toast.makeText(
                     this,
                     "Vui lòng chọn phương thức thanh toán",
@@ -109,8 +111,11 @@ class PaymentActivity : AppCompatActivity() {
     }
 
     private fun processCreditCardPayment() {
-        // TODO: Tích hợp thẻ tín dụng
-        showPaymentSuccess("Thanh toán thẻ tín dụng thành công")
+        val totalAmount = intent.getDoubleExtra("TOTAL_AMOUNT",0.0) ?: "0"
+        val intent = Intent(this, PaymentQrActivity::class.java).apply {
+            putExtra("TOTAL_AMOUNT1", totalAmount)
+        }
+        startActivity(intent)
     }
 
     private fun showPaymentSuccess(message: String) {
