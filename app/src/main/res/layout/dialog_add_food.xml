@@ -41,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
                     android:text="Chọn ảnh"
-                    android:textColor="?attr/colorOnSurface"
+                    android:textColor="@color/black"
                     app:icon="@drawable/add_photo"
                     app:iconTint="?attr/colorOnSurface"/>
 

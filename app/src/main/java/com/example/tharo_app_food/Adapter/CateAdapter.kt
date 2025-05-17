@@ -11,11 +11,11 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.textview.MaterialTextView
 
-class UserAdapter(
+class CateAdapter(
     private var categories: List<Category>,
     private var productCountMap: Map<Int, Int>,
     private val onItemClick: (Category) -> Unit
-) : RecyclerView.Adapter<UserAdapter.CategoryViewHolder>() {
+) : RecyclerView.Adapter<CateAdapter.CategoryViewHolder>() {
 
     inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val cardView: MaterialCardView = itemView.findViewById(R.id.cardView)

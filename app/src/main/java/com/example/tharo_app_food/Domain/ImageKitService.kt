@@ -41,7 +41,7 @@ data class AuthResponse(
 
 data class UploadResponse(
     val url: String,
-    val fileId: String,  // Đảm bảo có trường này để lưu fileId từ server
+    val fileId: String,
     val width: Int,
     val height: Int
 )

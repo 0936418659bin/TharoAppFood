@@ -209,23 +209,6 @@
                 android:enabled="false"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Xuất xứ -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:startIconDrawable="@drawable/location">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/tvFoodLocation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="45dp"
-                android:hint="Xuất xứ"
-                android:enabled="false"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
         <!-- Mô tả -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"

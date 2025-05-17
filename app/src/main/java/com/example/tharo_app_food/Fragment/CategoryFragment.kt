@@ -11,13 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.tharo_app_food.Adapter.CategoryAdapter
-import com.example.tharo_app_food.Adapter.UserAdapter
+import com.example.tharo_app_food.Adapter.CateAdapter
 import com.example.tharo_app_food.Config.GridSpacingItemDecoration
 import com.example.tharo_app_food.Dialog.AddCategoryDialog
-import com.example.tharo_app_food.Dialog.AddProductDialog
 import com.example.tharo_app_food.Domain.Category
-import com.example.tharo_app_food.Domain.Foods
 import com.example.tharo_app_food.R
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.search.SearchBar
@@ -30,7 +27,7 @@ class CategoryFragment : Fragment() {
 
     private lateinit var searchBar: SearchBar
     private lateinit var recyclerView: RecyclerView
-    private lateinit var categoryAdapter: UserAdapter
+    private lateinit var categoryAdapter: CateAdapter
     private lateinit var fabAddProduct: ExtendedFloatingActionButton
     private lateinit var database: FirebaseDatabase
     private lateinit var categoriesRef: DatabaseReference
@@ -73,7 +70,7 @@ class CategoryFragment : Fragment() {
 
     private fun setupRecyclerView() {
         // Khởi tạo với productCountMap rỗng ban đầu
-        categoryAdapter = UserAdapter(
+        categoryAdapter = CateAdapter(
             ArrayList(categoriesList),
             mutableMapOf(), // Truyền map rỗng ban đầu
             { category ->

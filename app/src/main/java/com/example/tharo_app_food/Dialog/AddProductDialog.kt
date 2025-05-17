@@ -83,7 +83,7 @@ class AddProductDialog : DialogFragment() {
 
     private val imageKitService by lazy {
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.15:3000/")
+            .baseUrl("http://192.168.1.4:3000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ImageKitService::class.java)
