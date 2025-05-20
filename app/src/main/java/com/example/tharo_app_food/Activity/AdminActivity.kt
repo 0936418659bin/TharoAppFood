@@ -50,7 +50,7 @@ class AdminActivity : AppCompatActivity() {
             }
         }
 
-        // Load default fragment
+
         loadFragment(DashboardFragment())
     }
 
